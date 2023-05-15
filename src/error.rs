@@ -1,5 +1,4 @@
 use std::string::FromUtf8Error;
-
 use thiserror::Error;
 
 pub type Res<T> = Result<T, MyErr>;
@@ -10,10 +9,10 @@ pub enum MyErr {
     Todo,
 
     #[error("")]
-    Missed(String),
+    Str(&'static str),
 
     #[error("")]
-    Str(&'static str),
+    Debug(String),
 
     #[error("parse int")]
     ParseInt(#[from] std::num::ParseIntError),

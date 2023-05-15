@@ -1,12 +1,22 @@
 [package]
 name = "esyn-derive"
-version = "0.1.0"
+version = "0.2.2"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["RSUU <rsuuyu@gmail.com>"]
+description = "Rusty Config File Parser"
+homepage = "https://crates.io/crates/esyn"
+repository = "https://github.com/rsuu/esyn"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["config","parser","deserialize"]
+categories = ["encoding"]
+exclude = ["examples/", ".gitignore", ".github/","tests/"]
 
 [lib]
 proc-macro = true
+
+[profile.release]
+lto = "thin"
 
 [dependencies]
 quote = "1.0.27"

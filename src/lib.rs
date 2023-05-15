@@ -1,14 +1,19 @@
 pub mod auto;
+pub mod bytes;
 pub mod error;
-pub mod parse;
+pub mod ext;
+pub mod parser;
+
+// macro
+pub use esyn_derive::EsynDe;
 
 // trait
 pub use {
-    auto::Zeroed,
-    parse::{EsynBytes, FromEsyn, ParseBytes, ParseExpr},
+    auto::{Ast, TypeInfo},
+    bytes::{read_int, Bytes, FromEsyn, Null, ParseBytes, ParseExpr},
 };
 
-// macro
-pub use esyn_derive::{AutoDefault, Esyn};
-
-pub use error::{MyErr, Res};
+pub use {
+    error::{MyErr, Res},
+    parser::Esyn,
+};
