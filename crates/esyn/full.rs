@@ -62,13 +62,13 @@ fn test_enum() {
 
 fn test_type() {
     let a = Config {
-        _bool: false,
+        _bool: true,
         _f32: 3.2,
         _f64: -0.1234_5678_9123,
         _i8: 123,
-        _isize: -1234,
+        _isize: -12345678912345,
+        _opt_none: None,
         _opt_u8: Some(10),
-        _opt_None: None,
     };
 
     let b = Config {};
@@ -77,8 +77,9 @@ fn test_type() {
 fn test_struct() {
     let a = Config {
         _struct_empty: StructEmpty {},
-        _struct_unnamed: StructUnnamed(9, "abcd", Some(StructUnnamed(9, "abcd"))),
-        _struct_tuple: StructUnnamed2(1, (-2, (3, (-4)))),
+        _struct_unnamed: StructUnnamed(9, "abcd"),
+        _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
+        _struct_tuple3: StructUnnamed3(1, 2),
         _box: None,
     };
 }

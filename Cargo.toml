@@ -1,6 +1,8 @@
-[package]
-name = "esyn"
-version = "0.2.2"
+[workspace]
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.3.0"
 edition = "2021"
 authors = ["RSUU <rsuuyu@gmail.com>"]
 description = "Rusty Config File Parser."
@@ -12,22 +14,16 @@ keywords = ["config","parser"]
 categories = ["encoding"]
 exclude = ["examples/", ".gitignore", ".github/","tests/"]
 
-[dependencies]
-esyn-derive = { path="./crates/esyn-derive" }
-
-byteorder = "1.4.3"
-syn = { version = "2.0.15", features = ["extra-traits", "full"] }
-thiserror = "1.0.40"
-fast_image_resize = {version="2.7.3", optional = true}
+[workspace.dependencies]
+syn = { version = "2.0.18", features = ["extra-traits", "full"] }
 
 
-[features]
-default = []
-full = []
-ext_fast_image_resize = ["dep:fast_image_resize"]
+[profile.dev]
+debug = false
+
+[profile.test]
+debug = false
 
 [profile.release]
+debug = false
 lto = "thin"
-
-[workspace]
-members = ["crates/*"]

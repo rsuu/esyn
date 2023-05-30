@@ -10,7 +10,7 @@ pub use esyn_derive::EsynDe;
 // trait
 pub use {
     auto::{Ast, TypeInfo},
-    bytes::{read_int, Bytes, FromEsyn, Null, ParseBytes, ParseExpr},
+    bytes::{read_int, Bytes, ParseBytes, ParseExpr},
 };
 
 pub use {

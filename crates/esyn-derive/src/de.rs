@@ -1,10 +1,7 @@
 use crate::bound;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{
-    parse_quote, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields,
-    Ident, Index, Result,
-};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Fields, Index, Result};
 
 pub fn derive_de(input: DeriveInput) -> Result<TokenStream> {
     match &input.data {
@@ -70,12 +67,16 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             impl #impl_generics esyn::Bytes
              for #struct_ident #ty_generics
                  #where_clause
-                {
-                fn from_bytes(mut buf: impl esyn::ParseBytes) -> esyn::Res<Self> {
+            {
+                fn from_bytes<W: esyn::ParseBytes>(buf: &mut W) -> esyn::Res<Self> {
                     let mut res = Self::default();
+                    // Struct{}
+                    if !buf.read_bool()? {
+                        return Ok(Self::default());
+                    }
 
                     #(
-                    res.#name = <#ty as esyn::Bytes>::from_bytes(&mut buf)?;
+                    res.#name = <#ty as esyn::Bytes>::from_bytes(buf)?;
                     )*
 
                     Ok(res)
@@ -90,7 +91,15 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             ..
         } => {
             let ty: &Vec<_> = &fields.unnamed.iter().map(|f| &f.ty).collect();
-            let idx: Vec<usize> = (0..ty.len()).collect();
+            let idx: Vec<_> = {
+                let mut res = vec![];
+
+                for n in 0..ty.len() {
+                    res.push(Index::from(n));
+                }
+
+                res
+            };
 
             ts_res.extend(quote! {
             impl #impl_generics esyn::Ast
@@ -120,12 +129,18 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             impl #impl_generics esyn::Bytes
              for #struct_ident #ty_generics
                  #where_clause
-                {
-                fn from_bytes(mut buf: impl esyn::ParseBytes) -> esyn::Res<Self> {
+            {
+                fn from_bytes<W: esyn::ParseBytes>(buf: &mut W) -> esyn::Res<Self> {
                     let mut res = Self::default();
 
+                    // Struct()
+                    if !buf.read_bool()? {
+                        return Ok(Self::default());
+                    }
+
                     #(
-                    res.#idx = <#ty as esyn::Bytes>::from_bytes(&mut buf)?;
+                    //dbg!(#idx);
+                    res.#idx = <#ty as esyn::Bytes>::from_bytes(buf)?;
                     )*
 
                     Ok(res)
@@ -154,7 +169,6 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
 
     let mut ts_de = TokenStream::new();
     let mut ts_bytes = TokenStream::new();
-    let mut ts_ast = TokenStream::new();
     for var in data.variants.iter() {
         let ident = &var.ident;
         let fields = &var.fields;
@@ -184,7 +198,7 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
                     #match_name => {
                         res = Self::#ident (
                         #(
-                        <#ty as esyn::Bytes>::from_bytes(&mut buf)?,
+                        <#ty as esyn::Bytes>::from_bytes(buf)?,
                         )*
                         );
                     },
@@ -196,7 +210,7 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
                     #match_name => {
                         res = Self::#ident {
                         #(
-                        #name: <#ty as esyn::Bytes>::from_bytes(&mut buf)?,
+                        #name: <#ty as esyn::Bytes>::from_bytes(buf)?,
                         )*
                         };
                     },
@@ -228,13 +242,19 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
          for #enum_ident #ty_generics
              #where_clause
         {
-            fn from_bytes(mut buf: impl esyn::ParseBytes) -> esyn::Res<Self> {
+            fn from_bytes<W: esyn::ParseBytes>(buf: &mut W) -> esyn::Res<Self> {
                 let mut res = Self::default();
+
+                // not Struct
                 if !buf.read_bool()? {
                     return Ok(res);
                 }
 
                 let name = buf.read_string()?;
+                if name.is_empty() {
+                    return Ok(res);
+                }
+
                 match name.as_str() {
                     #ts_bytes
                     _ => unreachable!()

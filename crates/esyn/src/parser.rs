@@ -161,9 +161,9 @@ impl Esyn {
             write_expr(buf, &Expr::Struct(ast3.clone()))?;
             //dbg!(&ast3);
             //dbg!(&buf);
-            let buf = Cursor::new(&buf);
+            let mut buf = Cursor::new(&buf);
 
-            res.insert(name.clone(), T::from_bytes(buf)?);
+            res.insert(name.clone(), T::from_bytes(&mut buf)?);
         }
 
         Ok(res)
@@ -308,6 +308,13 @@ fn inner_update_struct(v: &mut ExprStruct, list: &[(String, Expr)], tmp: &mut St
                 }
             }
 
+            //Expr::Tuple(ExprTuple {
+            //    attrs,
+            //    paren_token,
+            //    elems,
+            //}) => {
+            //    panic!()
+            //}
             _ => {
                 for (path, expr2) in list.iter() {
                     if path.as_str() != p.as_str() {
@@ -330,9 +337,8 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
         // Empty:
         //     Struct {}
         //     Enum {}
-        Expr::Struct(ExprStruct {
-            path: _, fields, ..
-        }) if fields.len() == 0 => {
+        Expr::Struct(ExprStruct { fields, .. }) if fields.len() == 0 => {
+            // FIXME:
             buf.write_u8(0)?;
         }
 
@@ -342,8 +348,10 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
         Expr::Struct(ExprStruct { path, fields, .. }) => {
             let (ty, is_enum) = get_type(path);
             if is_enum {
-                buf.write_u8(1)?;
                 ty.as_str().write(buf)?;
+            } else {
+                //m
+                buf.write_u8(1)?;
             }
 
             for FieldValue { expr, .. } in fields.iter() {
@@ -362,52 +370,54 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
 
             let (ty, is_enum) = get_type(path);
 
-            if is_enum {
-                // Enum( ... )
-                buf.write_u8(1)?;
-                ty.as_str().write(buf)?;
-            } else if ty.as_str() == "Some" {
-                // Enum( ... )
-                buf.write_u8(1)?;
-                ty.as_str().write(buf)?;
-            } else {
-                // Struct( ... )
-                //dbg!(&ty);
+            match (ty.as_str(), is_enum) {
+                (.., true) | ("Some", false) => {
+                    // Enum( ... )
+                    ty.as_str().write(buf)?;
+                }
+
+                _ => {
+                    //m
+                    buf.write_u8(1)?;
+                }
             }
 
             for expr in args.iter() {
+                //dbg!(&expr);
                 write_expr(buf, expr)?;
             }
         }
 
         // Unit:
         //     Enum::Unit
-        Expr::Path(ExprPath {
-            attrs: _,
-            qself: _,
-            path,
-        }) => {
+        //     StructUnit;
+        Expr::Path(ExprPath { path, .. }) => {
             let (ty, is_enum) = get_type(path);
             //dbg!(&ty);
 
-            if is_enum {
-                buf.write_u8(1)?;
-                ty.as_str().write(buf)?;
-            } else {
-                if ty.as_str() == "None" {
+            match (ty.as_str(), is_enum) {
+                // Enum::Unit
+                (.., true) => {
+                    ty.as_str().write(buf)?;
+                }
+
+                // None
+                ("None", false) => {
+                    // empty string
                     buf.write_u8(0)?;
                 }
-                //dbg!(&ty);
+
+                // StructUnit
+                _ => {
+                    //m
+                    buf.write_u8(1)?;
+                }
             }
         }
 
         // Tuple:
         //     (T0, T1, .., T)
-        Expr::Tuple(ExprTuple {
-            attrs: _,
-            paren_token: _,
-            elems,
-        }) => {
+        Expr::Tuple(ExprTuple { elems, .. }) => {
             for expr in elems.iter() {
                 write_expr(buf, expr)?;
             }

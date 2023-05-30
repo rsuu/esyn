@@ -10,7 +10,7 @@ mod feat {
     }
 
     impl Bytes for FilterType {
-        fn from_bytes(mut buf: impl ParseBytes) -> Res<Self> {
+        fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
             use FilterType::*;
 
             let mut res = Self::default();

@@ -12,85 +12,77 @@
 ```rust
 use esyn::{Esyn, EsynDe};
 
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Config {
+    name: String,
+    opt: Option<u8>,
+    window: Window,
+    map: Map,
+}
+
+#[derive(PartialEq, EsynDe)]
+enum Map {
+    Up,
+    Down,
+    Any(String),
+}
+
+impl Default for Map {
+    fn default() -> Self {
+        Map::Up
+    }
+}
+
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Window {
+    borderless: bool,
+    topmost: bool,
+    color: Color,
+}
+
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Color {
+    bg: u8,
+    fg: u8,
+}
+
 fn main() {
     let config = r#"
-fn test_example() {
+fn main() {
     let a = Config {
         name: "hi",
         map: Map::Down,
-        map2: Map::Any("llll"),
-        map3: Map::Named {
-            a: 1,
-            _color: Color { fg: 32, bg: 12 },
-        },
-        invert_mouse: false,
-        font: Some("abc"),
         window: Window {
-            color: Color { fg: 32 },
+            borderless: true,
+            topmost: false,
         },
-        _tuple: (1, ("hi"), 2),
-        _opt_enum: None,
+        opt: Some(56),
     };
 
-    a.window = Window {
-        borderless: true,
-        topmost: true,
+    a.window.color = Color {
+        bg:13,
+        fg:12,
     };
-    a.window.borderless = false;
-    a.window.color = Color { bg: 12 };
 }
-
 "#;
-    let esyn = esyn::Esyn::new(&config).unwrap();
+    let esyn = Esyn::new(&config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+    let a = map.get("a").unwrap();
 
-    #[derive(Debug, PartialEq, EsynDe)]
-    enum Map {
-        Any(String),
-        Named { a: u8, _color: Color },
-        Down,
-        Up,
-    }
-
-    #[derive(Debug, PartialEq, EsynDe)]
-    struct Window {
-        borderless: bool,
-        topmost: bool,
-        color: Color,
-    }
-
-    #[derive(Debug, PartialEq, EsynDe)]
-    struct Color {
-        bg: u8,
-        fg: u8,
-    }
-
-    #[derive(Debug, PartialEq, EsynDe)]
-    struct Config {
-        name: String,
-        invert_mouse: bool,
-        font: Option<String>,
-        window: Window,
-        _opt_enum: Option<Color>,
-
-        map: Map,
-        map2: Map,
-        map3: Map,
-        _tuple: (u8, String, u32),
-    }
-
-    let list = esyn.get::<Config>("test_example").unwrap();
-    let a = &list[0];
-
-    assert_eq!(a.name, "hi".to_string());
-    assert_eq!(a.map, Map::Down);
-    assert_eq!(a.font, Some("abc".to_string()));
-
-    assert_eq!(a.window.borderless, false);
-    assert_eq!(a.window.topmost, true);
-
-    dbg!(a);
+    assert_eq!(
+        a,
+        &Config {
+            name: "hi".to_string(),
+            map: Map::Down,
+            window: Window {
+                borderless: true,
+                topmost: false,
+                color: Color { bg: 13, fg: 12 },
+            },
+            opt: Some(56),
+        }
+    );
 }
-
 ```
 
 ## Supported Types

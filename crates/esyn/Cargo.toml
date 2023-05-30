@@ -1,5 +1,5 @@
 [package]
-name = "esyn-derive"
+name = "esyn"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -12,10 +12,14 @@ keywords.workspace = true
 categories.workspace = true
 exclude.workspace = true
 
-[lib]
-proc-macro = true
-
 [dependencies]
+esyn-derive = { version="*",path="../esyn-derive"}
 syn.workspace = true
-quote = "1.0.28"
-proc-macro2 = "1.0"
+byteorder = "1.4.3"
+thiserror = "1.0.40"
+fast_image_resize = { version = "2.7.3", optional = true}
+
+[features]
+default = []
+full = ["ext_fast_image_resize"]
+ext_fast_image_resize = ["dep:fast_image_resize"]

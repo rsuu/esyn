@@ -3,33 +3,15 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use std::io::{Read, Write};
 use syn::*;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Flag {
-    I8 = 1,
-    I16 = 2,
-    I32 = 4,
-    I64 = 8,
-    I128 = 16,
-}
-
-// step 4. type to struct
-pub trait FromEsyn: Bytes + Null {
-    fn from_esyn(buf: impl ParseBytes) -> Res<Self>;
-}
-
 // step 3. esyn-bytes to type
 pub trait Bytes: Sized {
-    fn from_bytes(buf: impl ParseBytes) -> Res<Self>;
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self>;
 }
 
 // step 2. bytes to esyn-bytes
 pub trait ParseBytes: Read + ReadBytesExt + ReadBytesExt {
     fn read_bool(&mut self) -> Res<bool> {
-        if self.read_u8()? == 1 {
-            Ok(self.read_u8()? == 1)
-        } else {
-            Ok(false)
-        }
+        Ok(self.read_u8()? == 1)
     }
 
     fn read_string(&mut self) -> Res<String> {
@@ -50,8 +32,13 @@ pub trait ParseExpr {
     fn write(&self, buf: &mut Vec<u8>) -> Res<()>;
 }
 
-pub trait Null {
-    fn null() -> Self;
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Flag {
+    I8 = 1,
+    I16 = 2,
+    I32 = 4,
+    I64 = 8,
+    I128 = 16,
 }
 
 impl From<u8> for Flag {
@@ -138,6 +125,8 @@ impl ParseExpr for ExprLit {
             Lit::Bool(v) => {
                 let v = v.value();
 
+                // bool is special
+                buf.pop().unwrap();
                 buf.write_u8(v as u8)?;
             }
 
@@ -215,7 +204,7 @@ pub fn write_int(buf: &mut Vec<u8>, v: &i128) -> Res<()> {
             buf.write_i64::<LE>(*v as i64)?;
         }
 
-        -0x80000000000000000000000000000000..=0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF => {
+        i128::MIN..=i128::MAX => {
             buf.write_u8(Flag::I128 as u8)?;
             buf.write_i128::<LE>(*v as i128)?;
         }
@@ -224,7 +213,7 @@ pub fn write_int(buf: &mut Vec<u8>, v: &i128) -> Res<()> {
     Ok(())
 }
 
-pub fn read_int<T: ParseBytes>(buf: &mut T) -> Res<i128> {
+pub fn read_int<W: ParseBytes>(buf: &mut W) -> Res<i128> {
     if buf.read_u8()? != 1 {
         return Ok(0);
     }
