@@ -12,51 +12,14 @@
 ```rust
 use esyn::{Esyn, EsynDe};
 
-#[derive(Debug, PartialEq, Default, EsynDe)]
-struct Config {
-    name: String,
-    opt: Option<u8>,
-    window: Window,
-    map: Map,
-}
-
-#[derive(PartialEq, EsynDe)]
-enum Map {
-    Up,
-    Down,
-    Any(String),
-}
-
-impl Default for Map {
-    fn default() -> Self {
-        Map::Up
-    }
-}
-
-#[derive(Debug, PartialEq, Default, EsynDe)]
-struct Window {
-    borderless: bool,
-    topmost: bool,
-    color: Color,
-}
-
-#[derive(Debug, PartialEq, Default, EsynDe)]
-struct Color {
-    bg: u8,
-    fg: u8,
-}
-
 fn main() {
     let config = r#"
 fn main() {
     let a = Config {
         name: "hi",
-        map: Map::Down,
         window: Window {
             borderless: true,
-            topmost: false,
         },
-        opt: Some(56),
     };
 
     a.window.color = Color {
@@ -67,22 +30,37 @@ fn main() {
 "#;
     let esyn = Esyn::new(&config).unwrap();
     let map = esyn.get::<Config>("main").unwrap();
-    let a = map.get("a").unwrap();
 
     assert_eq!(
-        a,
+        map.get("a").unwrap(),
         &Config {
             name: "hi".to_string(),
-            map: Map::Down,
             window: Window {
                 borderless: true,
-                topmost: false,
                 color: Color { bg: 13, fg: 12 },
             },
-            opt: Some(56),
         }
     );
 }
+
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Config {
+    name: String,
+    window: Window,
+}
+
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Window {
+    borderless: bool,
+    color: Color,
+}
+
+#[derive(Debug, PartialEq, Default, EsynDe)]
+struct Color {
+    bg: u8,
+    fg: u8,
+}
+
 ```
 
 ## Supported Types
@@ -94,10 +72,21 @@ f32 f64
 bool
 char String
 
-Option<T>
 Vec<T>
+Option<T>
+HashMap<K, V>
+BTreeMap<K, V>
+
+Option<IpAddr>
+Option<Ipv4Addr>
+Option<Ipv6Addr>
 
 Struct
 Enum
+Tuple
+
+fast_image_resize::FilterType
+
+?Box<T>
 
 ```

@@ -1,4 +1,4 @@
-use crate::{Ast, Bytes, ParseExpr, Res, TypeInfo};
+use crate::{Ast, Bytes, MyErr, ParseExpr, Res, TypeInfo};
 use byteorder::{WriteBytesExt, LE};
 use std::{
     collections::HashMap,
@@ -16,7 +16,7 @@ use syn::*;
 // ast3 = merge(ast1, ast2)
 // ast3.into_bytes()
 //
-// struct = Self::from_bytes()
+// Self::from_bytes()
 
 #[derive(Debug)]
 pub struct Esyn {
@@ -41,9 +41,8 @@ impl Esyn {
             match item {
                 Item::Fn(v) => res.func_list.push(Func::from_item(v)),
 
-                _ => {
-                    unreachable!()
-                }
+                // TODO: more info
+                _ => return Err(MyErr::Unsupported),
             }
         }
 
@@ -66,7 +65,8 @@ impl Esyn {
             Block { ref stmts, .. }
             ) = self.try_get_fn(fn_name)
         else {
-            return Err(crate::MyErr::Todo);
+            return Err(MyErr::On("Esyn::try_get_fn()"));
+
         };
 
         let ast1 = {
@@ -86,7 +86,6 @@ impl Esyn {
 
             match stmt {
                 Stmt::Local(Local {
-                    attrs: _,
                     let_token: token::Let { .. },
                     pat: Pat::Ident(PatIdent { ident, .. }),
                     init:
@@ -102,9 +101,17 @@ impl Esyn {
                     //dbg!(&val_name);
 
                     let Expr::Struct(ast2) = expr.as_ref()
-                            else { unreachable!() };
+                    else { unreachable!() };
 
-                    merge_struct(ty, &mut ast1, ast2);
+                    let ExprStruct { path, .. } = ast2;
+                    let (ty2, ..) = get_type(path);
+
+                    //dbg!(ty, &ty2);
+                    if ty != ty2.as_str() {
+                        continue;
+                    }
+
+                    merge_struct(&mut ast1, ast2);
 
                     //dbg!(&ast1);
                     map.insert(val_name, ast1);
@@ -119,7 +126,6 @@ impl Esyn {
 
                     while let Expr::Field(ExprField {
                         base,
-                        dot_token: _,
                         member: Member::Named(i),
                         ..
                     }) = l.as_ref()
@@ -149,16 +155,20 @@ impl Esyn {
                     }
                 }
 
-                _ => {
-                    todo!()
-                }
+                Stmt::Expr(Expr::Call(v), ..) => self.match_fn(v)?,
+
+                Stmt::Expr(Expr::Closure(v), ..) => self.match_closure(v)?,
+
+                _ => return Err(MyErr::Unsupported),
             }
         }
 
         let mut res = HashMap::with_capacity(map.capacity());
+
         for (name, ast3) in map.iter() {
-            let buf = &mut vec![];
-            write_expr(buf, &Expr::Struct(ast3.clone()))?;
+            let mut buf = vec![];
+            write_expr(&mut buf, &Expr::Struct(ast3.clone()))?;
+            //dbg!(&name);
             //dbg!(&ast3);
             //dbg!(&buf);
             let mut buf = Cursor::new(&buf);
@@ -182,6 +192,73 @@ impl Esyn {
 
         None
     }
+
+    fn match_fn(&self, v: &ExprCall) -> Res<()> {
+        let ExprCall {
+            attrs,
+            func,
+            paren_token,
+            args,
+        } = v;
+
+        dbg!(&v);
+
+        todo!();
+    }
+
+    fn match_closure(&self, v: &ExprClosure) -> Res<()> {
+        //dbg!(&v);
+
+        let ExprClosure { inputs, body, .. } = v;
+        let Pat::Path(ExprPath{path,..}) = &inputs[0]
+        else {
+            return Err(MyErr::Todo);
+        };
+
+        let (f, ..) = get_type(path);
+
+        //dbg!(&f);
+        match f.as_str() {
+            // |path::alias| ("a.a1.a2.a3.a4", "_a");
+            // vs
+            // ::path::alias("a.a1.a2.a3.a4", "_a");
+            "path::alias" => {
+                let Expr::Tuple(args) = body.as_ref()
+                else {
+                    return Err(MyErr::Todo);
+                };
+
+                let l = {
+                    if let Expr::Lit(ExprLit {
+                        lit: Lit::Str(v), ..
+                    }) = &args.elems[0]
+                    {
+                        v.value()
+                    } else {
+                        return Err(MyErr::Todo);
+                    }
+                };
+
+                let r = {
+                    if let Expr::Lit(ExprLit {
+                        lit: Lit::Str(v), ..
+                    }) = &args.elems[1]
+                    {
+                        v.value()
+                    } else {
+                        return Err(MyErr::Todo);
+                    }
+                };
+
+                dbg!(&l, &r);
+                unimplemented!()
+            }
+
+            _ => {}
+        }
+
+        Ok(())
+    }
 }
 
 impl Func {
@@ -198,22 +275,6 @@ impl Func {
 
         Self::new(ident.to_string(), block.as_ref().clone())
     }
-}
-
-fn merge_struct(ty: &str, left: &mut ExprStruct, right: &ExprStruct) {
-    let ExprStruct { path, .. } = left;
-    let (ty2, _is_enum) = get_type(path);
-
-    if ty != ty2.as_str() {
-        //dbg!(ty, &ty2);
-        return;
-    }
-
-    let _path = ty.clone();
-    let list = trans(right);
-    //dbg!(&list);
-
-    update_struct(left, &list);
 }
 
 fn trans(expr: &ExprStruct) -> Vec<(String, Expr)> {
@@ -255,6 +316,13 @@ fn inner_trans(v: &ExprStruct, res: &mut Vec<(String, Expr)>, tmp: &mut String) 
             }
         }
     }
+}
+
+fn merge_struct(left: &mut ExprStruct, right: &ExprStruct) {
+    let list = trans(right);
+    //dbg!(&list);
+
+    update_struct(left, &list);
 }
 
 fn update_struct(v: &mut ExprStruct, list: &[(String, Expr)]) {
@@ -308,13 +376,6 @@ fn inner_update_struct(v: &mut ExprStruct, list: &[(String, Expr)], tmp: &mut St
                 }
             }
 
-            //Expr::Tuple(ExprTuple {
-            //    attrs,
-            //    paren_token,
-            //    elems,
-            //}) => {
-            //    panic!()
-            //}
             _ => {
                 for (path, expr2) in list.iter() {
                     if path.as_str() != p.as_str() {
@@ -338,7 +399,6 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
         //     Struct {}
         //     Enum {}
         Expr::Struct(ExprStruct { fields, .. }) if fields.len() == 0 => {
-            // FIXME:
             buf.write_u8(0)?;
         }
 
@@ -369,17 +429,12 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
             else { unimplemented!() };
 
             let (ty, is_enum) = get_type(path);
-
             match (ty.as_str(), is_enum) {
-                (.., true) | ("Some", false) => {
-                    // Enum( ... )
-                    ty.as_str().write(buf)?;
-                }
+                // Enum( ... )
+                (.., true) | ("Some", false) => ty.as_str().write(buf)?,
 
-                _ => {
-                    //m
-                    buf.write_u8(1)?;
-                }
+                // Enum::Var( ... )
+                _ => buf.write_u8(1)?,
             }
 
             for expr in args.iter() {
@@ -438,6 +493,33 @@ fn write_expr(buf: &mut Vec<u8>, expr: &Expr) -> Res<()> {
             for expr in elems.iter() {
                 write_expr(buf, expr)?;
             }
+        }
+
+        // Type as HashMap
+        Expr::Cast(ExprCast {
+            expr, as_token, ty, ..
+        }) => {
+            let list = &[
+                "HashMap", "BTreeMap", //
+                "Ipv4Addr", "Ipv6Addr", //
+            ];
+
+            let Type::Path(
+                TypePath { path, .. }
+            ) = ty.as_ref()
+            else {
+                return Err(MyErr::Todo);
+            };
+            let (ty, ..) = get_type(path);
+
+            if !list.contains(&ty.as_str()) {
+                return Err(MyErr::UnType(ty));
+            }
+
+            // ?
+            // write(ty)
+
+            write_expr(buf, expr);
         }
 
         _ => expr.write(buf)?,

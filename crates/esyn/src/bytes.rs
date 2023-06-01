@@ -3,15 +3,15 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use std::io::{Read, Write};
 use syn::*;
 
-// step 3. esyn-bytes to type
+// step 3. type -> struct
 pub trait Bytes: Sized {
     fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self>;
 }
 
-// step 2. bytes to esyn-bytes
+// step 2. bytes -> type
 pub trait ParseBytes: Read + ReadBytesExt + ReadBytesExt {
     fn read_bool(&mut self) -> Res<bool> {
-        Ok(self.read_u8()? == 1)
+        Ok(self.read_u8()? != 0)
     }
 
     fn read_string(&mut self) -> Res<String> {
@@ -19,15 +19,15 @@ pub trait ParseBytes: Read + ReadBytesExt + ReadBytesExt {
         let mut buf = vec![0; len];
         self.read_exact(&mut buf)?;
 
-        Ok(String::from_utf8(buf)?)
+        Ok(unsafe { String::from_utf8_unchecked(buf) })
     }
 
     fn read_char(&mut self) -> Res<char> {
-        Ok(char::from_u32(self.read_u32::<LE>()?).unwrap())
+        Ok(unsafe { char::from_u32_unchecked(self.read_u32::<LE>()?) })
     }
 }
 
-// step 1. syn/file to bytes
+// step 1. syn/file -> bytes
 pub trait ParseExpr {
     fn write(&self, buf: &mut Vec<u8>) -> Res<()>;
 }
@@ -173,9 +173,7 @@ impl ParseExpr for ExprUnary {
                 }
             }
 
-            _ => {
-                todo!()
-            }
+            _ => return Err(crate::MyErr::Unsupported),
         }
 
         Ok(())

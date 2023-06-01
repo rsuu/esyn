@@ -13,7 +13,7 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-esyn-derive = { version="*",path="../esyn-derive"}
+esyn-derive = { version = "0.4.0", path="../esyn-derive"}
 syn.workspace = true
 byteorder = "1.4.3"
 thiserror = "1.0.40"

@@ -1,18 +1,5 @@
-use std::fmt::Debug;
-
 use esyn::{Esyn, EsynDe};
-
-#[test]
-fn main() {
-    let esyn = esyn::Esyn::from_file("./full.rs").unwrap();
-
-    test_struct_unnamed();
-    test_struct(&esyn);
-    test_example();
-    test_struct(&esyn);
-    test_enum(&esyn);
-    test_type(&esyn);
-}
+use std::fmt::Debug;
 
 #[derive(Debug, PartialEq, Default, EsynDe)]
 struct StructEmpty {}
@@ -39,6 +26,7 @@ struct StructNamed<T> {
     _vec_t: Vec<T>,
 }
 
+// FIXME:
 #[derive(Debug, PartialEq, Default, EsynDe)]
 struct BoxStruct {
     // ?
@@ -99,6 +87,7 @@ enum Enum {
     },
 }
 
+#[test]
 fn test_example() {
     #[derive(Debug, PartialEq, EsynDe)]
     enum Map {
@@ -147,7 +136,7 @@ fn test_example() {
     }
 
     let config = r#"
-fn test_example() {
+fn main() {
     let a = Config {
         id: 123456789123,
         name: "hi",
@@ -179,7 +168,7 @@ fn test_example() {
 }
 "#;
     let esyn = esyn::Esyn::new(&config).unwrap();
-    let map = esyn.get::<Config>("test_example").unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
 
     assert_eq!(
         map.get("a").unwrap(),
@@ -210,6 +199,7 @@ fn test_example() {
     );
 }
 
+#[test]
 fn test_struct_unnamed() {
     #[derive(Debug, PartialEq, Default, EsynDe)]
     struct StructUnnamed2(u8, (i8, (u16, (i16))));
@@ -219,7 +209,7 @@ fn test_struct_unnamed() {
         _un2: StructUnnamed2,
     }
 
-    let c = r#"
+    let config = r#"
 fn main() {
     let a = Config {
         _un2: StructUnnamed2(1, (2, (3, 4))),
@@ -227,16 +217,19 @@ fn main() {
 }
 "#;
 
-    let esyn = Esyn::new(c).unwrap();
+    let esyn = Esyn::new(config).unwrap();
     let map = esyn.get::<Config>("main").unwrap();
-    let a = map.get("a").unwrap();
-    dbg!(&a);
-
-    assert_eq!(a._un2, StructUnnamed2(1, (2, (3, 4))));
+    assert_eq!(
+        map.get("a").unwrap(),
+        &Config {
+            _un2: StructUnnamed2(1, (2, (3, 4)))
+        }
+    );
 }
 
-fn test_struct(esyn: &Esyn) {
-    #[derive(Debug, Default, EsynDe)]
+#[test]
+fn test_struct() {
+    #[derive(Debug, Default, PartialEq, EsynDe)]
     struct Config {
         _struct_empty: StructEmpty,
         _struct_empty2: StructEmpty2,
@@ -246,21 +239,33 @@ fn test_struct(esyn: &Esyn) {
         //_box: BoxStruct,
     }
 
-    let map = esyn.get::<Config>("test_struct").unwrap();
-    let a = map.get("a").unwrap();
-    dbg!(&a);
+    let config = r#"
+fn main() {
+    let a = Config {
+        _struct_empty: StructEmpty {},
+        _struct_unnamed: StructUnnamed(9, "abcd"),
+        _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
+        _struct_tuple3: StructUnnamed3(1, 2),
+    };
+}
+"#;
 
-    //FIXME:
-    assert_eq!(a._struct_empty, StructEmpty {});
-    assert_eq!(a._struct_empty2, StructEmpty2());
-
-    assert_eq!(a._struct_unnamed, StructUnnamed(9, "abcd".to_string()));
-
-    assert_eq!(a._struct_tuple, StructUnnamed2(1, (2, (3, 4))));
-    assert_eq!(a._struct_tuple3, StructUnnamed3(1, 2));
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+    assert_eq!(
+        map.get("a").unwrap(),
+        &Config {
+            _struct_empty: StructEmpty {},
+            _struct_empty2: StructEmpty2(),
+            _struct_unnamed: StructUnnamed(9, "abcd".to_string()),
+            _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
+            _struct_tuple3: StructUnnamed3(1, 2),
+        }
+    );
 }
 
-fn test_enum(esyn: &Esyn) {
+#[test]
+fn test_enum() {
     #[derive(Debug, Default, EsynDe)]
     struct Config {
         _enum_unit: EnumUnit,
@@ -273,7 +278,45 @@ fn test_enum(esyn: &Esyn) {
         _enum5: Enum,
     }
 
-    let map = esyn.get::<Config>("test_enum").unwrap();
+    let config = r#"
+fn main() {
+    let a = Config {
+        _enum_unit: EnumUnit::Unit2,
+        _enum_unnamed: EnumUnnamed::Unnamed(99, -99, "unnamed"),
+        _enum_named: EnumNamed::Named {
+            _u8: 123,
+            _i32: -123456789,
+            _string: "named",
+        },
+        _enum1: Enum::Unit2,
+        _enum2: Enum::Unnamed2(
+            "Unnamed2",
+            '🍵',
+            StructNamed {
+                _u8: -12,
+                _string: "StructNamed",
+                _vec_t: [1, 2, 3],
+            },
+        ),
+
+        _enum3: Enum::Named2 {
+            _u8: -3,
+            _u16: 456,
+            _struct_named: StructNamed {
+                _u8: -12,
+                _string: "StructNamed",
+                _vec_t: ['a', 'b', 'c'],
+            },
+        },
+        //_enum4: Enum, // default
+    };
+
+    a._enum5 = Enum::Unit3;
+}
+"#;
+
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
     let a = map.get("a").unwrap();
     dbg!(&a);
 
@@ -282,7 +325,6 @@ fn test_enum(esyn: &Esyn) {
         a._enum_unnamed,
         EnumUnnamed::Unnamed(99, -99, "unnamed".to_string()),
     );
-
     assert_eq!(
         a._enum_named,
         EnumNamed::Named {
@@ -300,7 +342,7 @@ fn test_enum(esyn: &Esyn) {
             StructNamed {
                 _u8: 244,
                 _string: "StructNamed".to_string(),
-                _vec_t: vec![1, 2, 3,],
+                _vec_t: [1, 2, 3,].to_vec(),
             },
         )
     );
@@ -312,7 +354,7 @@ fn test_enum(esyn: &Esyn) {
             _struct_named: StructNamed {
                 _u8: 244,
                 _string: "StructNamed".to_string(),
-                _vec_t: vec!['a', 'b', 'c',],
+                _vec_t: ['a', 'b', 'c',].to_vec(),
             },
         }
     );
@@ -320,7 +362,8 @@ fn test_enum(esyn: &Esyn) {
     assert_eq!(a._enum5, Enum::Unit3);
 }
 
-fn test_type(esyn: &Esyn) {
+#[test]
+fn test_type() {
     #[derive(Debug, PartialEq, Default, EsynDe)]
     struct Config {
         _bool: bool,
@@ -332,7 +375,78 @@ fn test_type(esyn: &Esyn) {
         _opt_u8: Option<u8>,
     }
 
-    let map = esyn.get::<Config>("test_type").unwrap();
+    #[derive(Debug, PartialEq, Default, EsynDe)]
+    struct Config2 {
+        _u8: u8,
+        _i8: i8,
+
+        _u16: u16,
+        _i16: i16,
+
+        _u32: u32,
+        _i32: i32,
+
+        _u64: u64,
+        _i64: i64,
+
+        _u128: u128,
+        _i128: i128,
+
+        _bool: bool,
+        _char: char,
+
+        _vec_u8: Vec<u8>,
+    }
+
+    #[derive(Debug, PartialEq, Default, EsynDe)]
+    struct Other {
+        _u8: u8,
+    }
+
+    let config = r#"
+fn main() {
+    let a = Config {
+        _bool: true,
+        _f32: 3.2,
+        _f64: -0.1234_5678_9123,
+        _i8: 123,
+        _isize: -12345678912345,
+        _opt_none: None,
+        _opt_u8: Some(10),
+    };
+
+    let b = Config {};
+
+    let other = Other {
+        _u8: 1
+    };
+
+    let a2 = Config2 {
+        _u8: 127,
+        _i8: -128,
+
+        _u16: 1,
+        _i16: 1,
+
+        _u32: 1,
+        _i32: 1,
+
+        _u64: 1,
+        _i64: 1,
+
+        _u128: 1,
+        _i128: 1,
+
+        _bool:true,
+        _char:'A',
+
+        _vec_u8: [0, 1, 2, 3],
+
+    };
+}
+"#;
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
     assert_eq!(
         map.get("a").unwrap(),
         &Config {
@@ -358,4 +472,136 @@ fn test_type(esyn: &Esyn) {
             _opt_u8: None,
         }
     );
+
+    let map = esyn.get::<Other>("main").unwrap();
+    assert_eq!(map.get("other").unwrap(), &Other { _u8: 1 });
+
+    let map = esyn.get::<Config2>("main").unwrap();
+    assert_eq!(
+        map.get("a2").unwrap(),
+        &Config2 {
+            _u8: 127,
+            _i8: -128,
+
+            _u16: 1,
+            _i16: 1,
+
+            _u32: 1,
+            _i32: 1,
+
+            _u64: 1,
+            _i64: 1,
+
+            _u128: 1,
+            _i128: 1,
+
+            _bool: true,
+            _char: 'A',
+            _vec_u8: [0, 1, 2, 3].to_vec(),
+        }
+    );
 }
+
+#[test]
+fn test_tuple() {
+    #[derive(Debug, PartialEq, Default, EsynDe)]
+    struct Config {
+        _tuple_default: (u8, (u16, (u32, u64))),
+    }
+
+    let config = r#"
+fn main() {
+    let a = Config {
+    };
+}"#;
+
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+
+    dbg!(map.get("a").unwrap(),);
+    assert_eq!(
+        map.get("a").unwrap(),
+        &Config {
+            _tuple_default: (0, (0, (0, 0))),
+        }
+    );
+}
+
+#[test]
+fn test_hashmap() {
+    use std::collections::HashMap;
+
+    #[derive(Debug, PartialEq, Default, EsynDe)]
+    struct Config {
+        _hashmap_u8_string: HashMap<u8, String>,
+        _default: HashMap<u8, String>,
+    }
+
+    let config = r#"
+fn main() {
+    let a = Config {
+        _hashmap_u8_string: [
+            (0, "a"),
+            (1, "b"),
+            (2, "c"),
+        ] as HashMap,
+        _default: [] as HashMap,
+    };
+}"#;
+
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+    let a = map.get("a").unwrap();
+    let a1 = &a._hashmap_u8_string;
+
+    assert_eq!(a1.get(&0).unwrap(), "a");
+    assert_eq!(a1.get(&1).unwrap(), "b");
+    assert_eq!(a1.get(&2).unwrap(), "c");
+
+    assert_eq!(a._default, HashMap::default());
+}
+
+#[test]
+fn test_ip() {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+    #[derive(Debug, PartialEq, Default, EsynDe)]
+    struct Config {
+        _ip4: Option<Ipv4Addr>,
+        _ip6: Option<Ipv6Addr>,
+
+        _ip: Option<IpAddr>,
+        _ip_none: Option<IpAddr>,
+    }
+
+    let config = r#"
+fn main() {
+    let a = Config {
+        _ip4: Some( (127, 0, 0, 1) as Ipv4Addr ),
+        _ip6: Some( (1234, 4321, 0, 0, 0, 0, 0, 0 ) as Ipv4Addr ),
+
+        _ip: Some( IpAddr::V4(1, 1, 1, 1) ),
+        //_ip_none,
+
+    };
+}"#;
+
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+    let a = map.get("a").unwrap();
+
+    assert_eq!(a._ip4, Some(Ipv4Addr::new(127, 0, 0, 1)));
+    assert_eq!(a._ip6, Some(Ipv6Addr::new(1234, 4321, 0, 0, 0, 0, 0, 0)));
+    assert_eq!(a._ip, Some(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1))));
+    assert_eq!(a._ip_none, None);
+}
+
+// TODO:
+//#[test]
+//fn test_closure() {
+//    dbg!(syn::parse_str::<syn::Expr>(
+//        r#"
+//|alias|("a.b.c", "k")
+//"#
+//    ));
+//}

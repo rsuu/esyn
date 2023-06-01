@@ -1,4 +1,3 @@
-use std::string::FromUtf8Error;
 use thiserror::Error;
 
 pub type Res<T> = Result<T, MyErr>;
@@ -14,24 +13,27 @@ pub enum MyErr {
     #[error("")]
     Debug(String),
 
+    #[error("panic on {0:?}")]
+    On(&'static str),
+
     #[error("parse int")]
     ParseInt(#[from] std::num::ParseIntError),
 
     #[error("parse int")]
     ParseFloat(#[from] std::num::ParseFloatError),
 
-    #[error("")]
-    Io(#[from] std::io::Error),
+    #[error("unsupported")]
+    Unsupported,
+
+    #[error("{0:?} is unsupported")]
+    UnType(String),
 
     #[error("")]
-    Utf8(#[from] FromUtf8Error),
+    Io(#[from] std::io::Error),
 
     #[error("")]
     UnEqFields,
 
     #[error("")]
     Syn(#[from] syn::Error),
-
-    #[error("invalid header (expected {expected:?}, found {found:?})")]
-    InvalidHeader { expected: String, found: String },
 }

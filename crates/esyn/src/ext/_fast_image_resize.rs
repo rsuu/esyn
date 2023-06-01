@@ -20,12 +20,12 @@ mod feat {
 
             let name = buf.read_string()?;
 
-            Ok(match name.split_once("::").unwrap().1 {
-                "Box" => Box,
-                "CatmullRom" => CatmullRom,
-                "Hamming" => Hamming,
-                "Lanczos3" => Lanczos3,
-                "Mitchell" => Mitchell,
+            Ok(match name.as_str() {
+                "FilterType::Box" => Box,
+                "FilterType::CatmullRom" => CatmullRom,
+                "FilterType::Hamming" => Hamming,
+                "FilterType::Lanczos3" => Lanczos3,
+                "FilterType::Mitchell" => Mitchell,
                 _ => return Err(MyErr::Todo),
             })
         }

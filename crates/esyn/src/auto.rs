@@ -1,22 +1,14 @@
 use crate::*;
 use byteorder::LE;
-use std::io::Write;
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::Hash,
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+};
 
 //==================
 pub trait TypeInfo {
     fn name() -> &'static str;
-
-    fn en<T>(&self, w: &mut T, fn_name: &str, val_name: &str) -> Res<()>
-    where
-        Self: std::fmt::Debug,
-        T: Write,
-    {
-        let buf = format!("fn {fn_name}() {{ let {val_name} = {:?}; }}", self);
-
-        w.write(buf.as_bytes())?;
-
-        Ok(())
-    }
 }
 
 //==================
@@ -34,20 +26,21 @@ macro_rules! impl_Ast_for {
      )*};
 }
 
+// WARN: Ignore elements in tuple is not allowed.
 macro_rules! impl_Ast_for_tuple {
     ( $($name:ident),+ ) => {
         impl< $($name:Ast),+ > Ast
          for ($($name,)*) {
             fn ast() -> String {
-                let mut tmp = "".to_string();
+                 let mut tmp = "".to_string();
 
-                $(
-                tmp.push_str(&<$name as Ast>::ast());
-                tmp.push(',');
-                )*
+                 $(
+                 tmp.push_str(&<$name as Ast>::ast());
+                 tmp.push(',');
+                 )*
 
-                //dbg!(&tmp);
-                format!("({})", tmp)
+                 //dbg!(&tmp);
+                 format!("({})", tmp)
             }
         }
     };
@@ -89,6 +82,36 @@ impl<T: Ast> Ast for Vec<T> {
 impl<T: Ast> Ast for Box<T> {
     fn ast() -> String {
         format!("*\"Box\"")
+    }
+}
+
+impl<K: Ast, V: Ast> Ast for HashMap<K, V> {
+    fn ast() -> String {
+        format!("*\"HashMap\"")
+    }
+}
+
+impl<K: Ast, V: Ast> Ast for BTreeMap<K, V> {
+    fn ast() -> String {
+        format!("*\"BTreeMap\"")
+    }
+}
+
+impl Ast for Ipv4Addr {
+    fn ast() -> String {
+        format!("*\"Ipv4Addr\"")
+    }
+}
+
+impl Ast for Ipv6Addr {
+    fn ast() -> String {
+        format!("*\"Ipv6Addr\"")
+    }
+}
+
+impl Ast for IpAddr {
+    fn ast() -> String {
+        format!("*\"IpAddr\"")
     }
 }
 
@@ -191,12 +214,29 @@ impl<T: Bytes> Bytes for Option<T> {
         }
 
         let name = buf.read_string()?;
-        if name.is_empty() {
-            return Ok(None);
-        }
-        assert_eq!(&name, "Some");
+        Ok(match name.as_str() {
+            "Some" => Some(T::from_bytes(buf)?),
+            "" => None,
+            _ => return Err(MyErr::Todo),
+        })
+    }
+}
 
-        Ok(Some(T::from_bytes(buf)?))
+impl<K, V> Bytes for HashMap<K, V>
+where
+    K: Bytes + Hash + Eq,
+    V: Bytes + Hash + Eq,
+{
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
+        // like Vec
+        let len = buf.read_u32::<LE>()? as usize;
+
+        let mut res = Self::with_capacity(len);
+        for _ in 0..len {
+            res.insert(K::from_bytes(buf)?, V::from_bytes(buf)?);
+        }
+
+        Ok(res)
     }
 }
 
@@ -204,7 +244,7 @@ impl<T: Bytes> Bytes for Vec<T> {
     fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
         let len = buf.read_u32::<LE>()? as usize;
 
-        let mut res = Vec::with_capacity(len);
+        let mut res = Self::with_capacity(len);
         for _ in 0..len {
             res.push(T::from_bytes(buf)?);
         }
@@ -217,5 +257,55 @@ impl<T: Bytes> Bytes for Vec<T> {
 impl<T: Bytes> Bytes for Box<T> {
     fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
         Ok(Box::new(T::from_bytes(buf)?))
+    }
+}
+
+impl<K, V> Bytes for BTreeMap<K, V>
+where
+    K: Bytes + Ord,
+    V: Bytes + Ord,
+{
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
+        // like Vec
+        let len = buf.read_u32::<LE>()? as usize;
+
+        let mut res = Self::new();
+        for _ in 0..len {
+            res.insert(K::from_bytes(buf)?, V::from_bytes(buf)?);
+        }
+
+        Ok(res)
+    }
+}
+
+impl Bytes for Ipv4Addr {
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
+        let (a, b, c, d) = <(u8, u8, u8, u8) as Bytes>::from_bytes(buf)?;
+
+        Ok(Self::new(a, b, c, d))
+    }
+}
+
+impl Bytes for Ipv6Addr {
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
+        let (a, b, c, d, e, f, g, h) =
+            <(u16, u16, u16, u16, u16, u16, u16, u16) as Bytes>::from_bytes(buf)?;
+
+        Ok(Self::new(a, b, c, d, e, f, g, h))
+    }
+}
+
+impl Bytes for IpAddr {
+    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self> {
+        if !buf.read_bool()? {
+            return Err(MyErr::Todo);
+        }
+
+        let name = buf.read_string()?;
+        Ok(match name.as_str() {
+            "IpAddr::V4" => Self::V4(Ipv4Addr::from_bytes(buf)?),
+            "IpAddr::V6" => Self::V6(Ipv6Addr::from_bytes(buf)?),
+            _ => return Err(MyErr::Todo),
+        })
     }
 }

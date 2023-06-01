@@ -19,16 +19,19 @@ fn main() {
     };
 
     let other = Other {
-        _a: 1
+        _u8: 1,
+        _string: "abcd",
+        name: "hi",
+        _vec_u8: [1,2,3,4],
     };
 }
 "#;
+
     let esyn = Esyn::new(&config).unwrap();
     let map = esyn.get::<Config>("main").unwrap();
-    let a = map.get("a").unwrap();
 
     assert_eq!(
-        a,
+        map.get("a").unwrap(),
         &Config {
             name: "hi".to_string(),
             map: Map::Down,
@@ -41,24 +44,24 @@ fn main() {
         }
     );
 
-    en(a);
-
     let map = esyn.get::<Other>("main").unwrap();
-    let a = map.get("other").unwrap();
-}
-
-fn en(a: &Config) {
-    use esyn::TypeInfo;
-    //let mut f = std::fs::File::create("./en.rs").unwrap();
-    let mut f = vec![];
-    a.en(&mut f, "main", "a").unwrap();
-
-    //dbg!(String::from_utf8(f).unwrap());
+    assert_eq!(
+        map.get("other").unwrap(),
+        &Other {
+            _u8: 1,
+            _string: "abcd".to_string(),
+            name: "hi".to_string(),
+            _vec_u8: [1, 2, 3, 4].to_vec(),
+        }
+    );
 }
 
 #[derive(Debug, PartialEq, Default, EsynDe)]
 struct Other {
-    _a: u8,
+    _u8: u8,
+    _string: String,
+    name: String,
+    _vec_u8: Vec<u8>,
 }
 
 #[derive(Debug, PartialEq, Default, EsynDe)]
