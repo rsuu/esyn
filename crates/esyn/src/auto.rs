@@ -8,7 +8,14 @@ use std::{
 
 //==================
 pub trait TypeInfo {
+    // return struct/enum ident.
     fn name() -> &'static str;
+}
+
+pub trait FmtEnum {
+    // TODO: match
+    //           Self::A => "Self::A"
+    fn fmt() -> &'static str;
 }
 
 //==================

@@ -18,7 +18,6 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let mut ts_res = TokenStream::new();
-
     ts_res.extend(quote! {
         impl #impl_generics esyn::TypeInfo
          for #struct_ident #ty_generics
@@ -35,8 +34,8 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             fields: Fields::Named(fields),
             ..
         } => {
-            let name: &Vec<_> = &fields.named.iter().map(|f| &f.ident).collect();
-            let ty: &Vec<_> = &fields.named.iter().map(|f| &f.ty).collect();
+            let field_name: &Vec<_> = &fields.named.iter().map(|f| &f.ident).collect();
+            let field_ty: &Vec<_> = &fields.named.iter().map(|f| &f.ty).collect();
 
             ts_res.extend(quote! {
             impl #impl_generics esyn::Ast
@@ -50,8 +49,8 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                     tmp.push_str(
                         &format!(
                             "{}:{},",
-                            stringify!(#name),
-                            <#ty as esyn::Ast>::ast()
+                            stringify!(#field_name),
+                            <#field_ty as esyn::Ast>::ast()
                         )
                     );
                     )*
@@ -76,7 +75,7 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                     }
 
                     #(
-                    res.#name = <#ty as esyn::Bytes>::from_bytes(buf)?;
+                    res.#field_name = <#field_ty as esyn::Bytes>::from_bytes(buf)?;
                     )*
 
                     Ok(res)
@@ -90,11 +89,10 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             fields: Fields::Unnamed(fields),
             ..
         } => {
-            let ty: &Vec<_> = &fields.unnamed.iter().map(|f| &f.ty).collect();
+            let field_ty: &Vec<_> = &fields.unnamed.iter().map(|f| &f.ty).collect();
             let idx: Vec<_> = {
                 let mut res = vec![];
-
-                for n in 0..ty.len() {
+                for n in 0..fields.unnamed.len() {
                     res.push(Index::from(n));
                 }
 
@@ -113,7 +111,7 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                     tmp.push_str(
                         &format!(
                             "{},",
-                            <#ty as esyn::Ast>::ast()
+                            <#field_ty as esyn::Ast>::ast()
                         )
                     );
                     )*
@@ -139,13 +137,11 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                     }
 
                     #(
-                    //dbg!(#idx);
-                    res.#idx = <#ty as esyn::Bytes>::from_bytes(buf)?;
+                    res.#idx = <#field_ty as esyn::Bytes>::from_bytes(buf)?;
                     )*
 
                     Ok(res)
                 }
-
             }
 
             });
@@ -155,7 +151,30 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             fields: Fields::Unit,
             ..
         } => {
-            todo!()
+            ts_res.extend(quote! {
+            impl #impl_generics esyn::Ast
+             for #struct_ident #ty_generics
+                 #where_clause
+            {
+                fn ast() -> String {
+                    stringify!(#struct_ident).to_string()
+                }
+            }
+
+            impl #impl_generics esyn::Bytes
+             for #struct_ident #ty_generics
+                 #where_clause
+            {
+                fn from_bytes<W: esyn::ParseBytes>(buf: &mut W) -> esyn::Res<Self> {
+                    // ?
+                    buf.read_bool()?;
+
+                    Ok(Self::default())
+
+                }
+            }
+
+            });
         }
     }
 
@@ -170,25 +189,25 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
     let mut ts_de = TokenStream::new();
     let mut ts_bytes = TokenStream::new();
     for var in data.variants.iter() {
-        let ident = &var.ident;
+        let var_ident = &var.ident;
         let fields = &var.fields;
 
-        let name: &Vec<_> = &fields.iter().map(|f| &f.ident).collect();
-        let ty: &Vec<_> = &fields.iter().map(|f| &f.ty).collect();
+        let field_name: &Vec<_> = &fields.iter().map(|f| &f.ident).collect();
+        let field_ty: &Vec<_> = &fields.iter().map(|f| &f.ty).collect();
 
-        let match_name = format!("{}::{}", enum_ident.to_string(), ident.to_string());
+        let match_name = format!("{}::{}", enum_ident.to_string(), var_ident.to_string());
 
         match fields {
             Fields::Unit => {
                 ts_de.extend(quote! {
-                    stringify!(#ident) => {
-                        return Ok(Self::#ident);
+                    stringify!(#var_ident) => {
+                        return Ok(Self::#var_ident);
                     },
                 });
 
                 ts_bytes.extend(quote! {
                     #match_name => {
-                        res = Self::#ident;
+                        res = Self::#var_ident;
                     },
                 });
             }
@@ -196,9 +215,9 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
             Fields::Unnamed(_) => {
                 ts_bytes.extend(quote! {
                     #match_name => {
-                        res = Self::#ident (
+                        res = Self::#var_ident (
                         #(
-                        <#ty as esyn::Bytes>::from_bytes(buf)?,
+                        <#field_ty as esyn::Bytes>::from_bytes(buf)?,
                         )*
                         );
                     },
@@ -208,9 +227,9 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
             Fields::Named(_) => {
                 ts_bytes.extend(quote! {
                     #match_name => {
-                        res = Self::#ident {
+                        res = Self::#var_ident {
                         #(
-                        #name: <#ty as esyn::Bytes>::from_bytes(buf)?,
+                        #field_name: <#field_ty as esyn::Bytes>::from_bytes(buf)?,
                         )*
                         };
                     },

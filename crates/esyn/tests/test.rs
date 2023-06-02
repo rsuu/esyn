@@ -7,7 +7,7 @@ struct StructEmpty {}
 #[derive(Debug, PartialEq, Default, EsynDe)]
 struct StructEmpty2();
 
-//#[derive(Debug, PartialEq, Default, EsynDe)]
+#[derive(Debug, PartialEq, Default, EsynDe)]
 struct StructUnit;
 
 #[derive(Debug, PartialEq, Default, EsynDe)]
@@ -228,6 +228,34 @@ fn main() {
 }
 
 #[test]
+fn test_struct_unit() {
+    #[derive(Debug, Default, PartialEq, EsynDe)]
+    struct Config {
+        _struct_unit: StructUnit,
+        _default: StructUnit,
+    }
+
+    let config = r#"
+fn main() {
+    let a = Config {
+        _struct_unit: StructUnit,
+        //_default
+    };
+}
+"#;
+
+    let esyn = Esyn::new(config).unwrap();
+    let map = esyn.get::<Config>("main").unwrap();
+    assert_eq!(
+        map.get("a").unwrap(),
+        &Config {
+            _struct_unit: StructUnit,
+            _default: StructUnit
+        }
+    );
+}
+
+#[test]
 fn test_struct() {
     #[derive(Debug, Default, PartialEq, EsynDe)]
     struct Config {
@@ -236,6 +264,7 @@ fn test_struct() {
         _struct_unnamed: StructUnnamed,
         _struct_tuple: StructUnnamed2,
         _struct_tuple3: StructUnnamed3,
+        _struct_unit: StructUnit,
         //_box: BoxStruct,
     }
 
@@ -260,6 +289,7 @@ fn main() {
             _struct_unnamed: StructUnnamed(9, "abcd".to_string()),
             _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
             _struct_tuple3: StructUnnamed3(1, 2),
+            _struct_unit: StructUnit,
         }
     );
 }
@@ -276,6 +306,8 @@ fn test_enum() {
         _enum3: Enum,
         _enum4: Enum,
         _enum5: Enum,
+        // #[esyn_fmt]
+        // _enum6: Enum,
     }
 
     let config = r#"
