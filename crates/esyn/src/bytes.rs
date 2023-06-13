@@ -179,7 +179,7 @@ impl ParseExpr for ExprUnary {
                 let v: i128 = v.base10_parse()?;
                 let v = (-1 * v) as u128;
 
-                w.write_u8(1)?; // Some(..)
+                w.write_u8(1)?;
                 write_int(w, &v)?;
             }
 

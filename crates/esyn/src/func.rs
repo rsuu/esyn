@@ -132,7 +132,6 @@ impl FuncMap {
         let Expr::Struct(ast2) = expr.as_ref()
         else { unreachable!() };
 
-        // FIXME: sort fields
         let ExprStruct { path, .. } = ast2;
         let (ty2, ..) = get_type(&path);
 
@@ -359,7 +358,7 @@ pub fn write_expr<W: Write>(w: &mut W, expr: &Expr) -> Res<()> {
                 //dbg!(&i);
                 tmp.push((expr, i.to_string()));
             }
-            tmp.sort_by_key(|f| f.1.clone());
+            tmp.sort_by(|a, b| a.1.cmp(&b.1));
 
             for (expr, ..) in tmp.iter() {
                 write_expr(w, expr)?;

@@ -1,14 +1,13 @@
 use esyn::{Esyn, EsynDe};
 
 fn main() {
-    // FIXME: order in Some()
     #[derive(Debug, PartialEq, Default, EsynDe)]
     struct Config {
         _opt_none: Option<Other>,
         _opt: Option<Other>,
         _o: Opt<Other>,
-
         _on: Opt<Other>,
+        //_opt_box: Option<Box<Self>>
     }
 
     #[derive(Debug, PartialEq, Default, EsynDe)]

@@ -41,7 +41,7 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
             for f in fields.named.iter() {
                 tmp.push((&f.ty, &f.ident, f.ident.as_ref().unwrap().to_string()));
             }
-            tmp.sort_by_key(|ref f| f.2.clone());
+            tmp.sort_by(|a, b| a.1.cmp(&b.1));
 
             let mut field_name = vec![];
             let mut field_ty = vec![];
@@ -56,25 +56,20 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                  #where_clause
             {
                 fn ast() -> String {
-                    let mut tmp:Vec<String> = vec![];
+                    let mut tmp: Vec<String> = vec![];
 
                     #(
-                    tmp.push(
-                        format!(
-                            "{}:{}",
-                            stringify!(#field_name),
-                            <#field_ty as esyn::Ast>::ast()
-                        )
-                    );
+                    tmp.push(format!(
+                        "{}:{}",
+                        stringify!(#field_name),
+                        <#field_ty as esyn::Ast>::ast()
+                    ));
                     )*
 
-                    //tmp.sort();
-
-                    let tmp = tmp.join(",");
                     format!(
                         "{} {{ {} }}",
                         stringify!(#struct_ident),
-                        tmp
+                        tmp.join(",")
                     )
                 }
             }
@@ -121,21 +116,19 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
                  #where_clause
             {
                 fn ast() -> String {
-                    let mut tmp = "".to_string();
+                    let mut tmp: Vec<String> = vec![];
 
                     #(
-                    tmp.push_str(
-                        &format!(
-                            "{},",
-                            <#field_ty as esyn::Ast>::ast()
-                        )
-                    );
+                    tmp.push(format!(
+                        "{}",
+                        <#field_ty as esyn::Ast>::ast()
+                    ));
                     )*
 
                     format!(
                         "{} ( {} )",
                         stringify!(#struct_ident),
-                        tmp
+                        tmp.join(",")
                     )
                 }
             }
@@ -207,7 +200,7 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
         let var_ident = &var.ident;
         let fields = &var.fields;
 
-        let field_name: &Vec<_> = &fields.iter().map(|f| &f.ident).collect();
+        //let field_name: &Vec<_> = &fields.iter().map(|f| &f.ident).collect();
         let field_ty: &Vec<_> = &fields.iter().map(|f| &f.ty).collect();
 
         let match_name = format!("{}::{}", enum_ident.to_string(), var_ident.to_string());
@@ -240,11 +233,12 @@ pub fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> 
             }
 
             Fields::Named(_) => {
+                // sort fields
                 let mut tmp = vec![];
                 for f in fields.iter() {
                     tmp.push((&f.ty, &f.ident, f.ident.as_ref().unwrap().to_string()));
                 }
-                tmp.sort_by_key(|ref f| f.2.clone());
+                tmp.sort_by(|a, b| a.1.cmp(&b.1));
 
                 let mut field_name = vec![];
                 let mut field_ty = vec![];

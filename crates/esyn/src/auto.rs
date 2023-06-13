@@ -74,7 +74,6 @@ impl_Ast_for_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9);
 impl_Ast_for_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
 impl_Ast_for_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
 
-// FIXME: order in Some()
 impl<T: Ast> Ast for Option<T> {
     fn ast() -> String {
         format!("*\"Option\"")
