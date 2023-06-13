@@ -18,7 +18,6 @@ pub fn add_trait_bounds_enum(mut generics: Generics) -> Generics {
             type_param.bounds.push(parse_quote!(Sized));
             type_param.bounds.push(parse_quote!(Default));
             type_param.bounds.push(parse_quote!(esyn::Bytes));
-            type_param.bounds.push(parse_quote!(esyn::EnumName));
             type_param.bounds.push(parse_quote!(esyn::Ast));
         }
     }

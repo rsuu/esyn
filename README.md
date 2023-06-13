@@ -63,6 +63,9 @@ struct Color {
 
 ```
 
+For more examples take a look on [tests](/crates/esyn/tests)
+
+
 ## Supported Types
 
 ```rust

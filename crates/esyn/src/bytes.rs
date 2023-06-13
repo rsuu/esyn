@@ -3,12 +3,12 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use std::io::{Read, Write};
 use syn::*;
 
-// step 3. type -> struct
-pub trait Bytes: Sized {
-    fn from_bytes<W: ParseBytes>(buf: &mut W) -> Res<Self>;
+// 1/3. syn/file -> bytes
+pub trait ParseExpr {
+    fn write<W: Write>(&self, w: &mut W) -> Res<()>;
 }
 
-// step 2. bytes -> type
+// 2/3. bytes -> type
 pub trait ParseBytes: Read + ReadBytesExt + ReadBytesExt {
     fn read_bool(&mut self) -> Res<bool> {
         Ok(self.read_u8()? != 0)
@@ -27,9 +27,9 @@ pub trait ParseBytes: Read + ReadBytesExt + ReadBytesExt {
     }
 }
 
-// step 1. syn/file -> bytes
-pub trait ParseExpr {
-    fn write(&self, buf: &mut Vec<u8>) -> Res<()>;
+// 3/3. type -> struct
+pub trait Bytes: Sized {
+    fn from_bytes<W: ParseBytes>(w: &mut W) -> Res<Self>;
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -41,45 +41,31 @@ pub enum Flag {
     U128 = 16,
 }
 
-impl From<u8> for Flag {
-    fn from(value: u8) -> Self {
-        match value {
-            1 => Self::U8,
-            2 => Self::U16,
-            4 => Self::U32,
-            8 => Self::U64,
-            16 => Self::U128,
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl<T: std::io::Read> ParseBytes for T {}
 
 impl ParseExpr for &str {
-    fn write(&self, buf: &mut Vec<u8>) -> Res<()> {
-        buf.write_u8(1)?;
-
+    fn write<W: Write>(&self, w: &mut W) -> Res<()> {
         let var = self.as_bytes();
         let len = var.len() as u32;
-        buf.write_u32::<LE>(len)?;
-        buf.write_all(var)?;
+
+        w.write_u8(1)?;
+        w.write_u32::<LE>(len)?;
+        w.write_all(var)?;
 
         Ok(())
     }
 }
 
 impl ParseExpr for Expr {
-    fn write(&self, buf: &mut Vec<u8>) -> Res<()> {
+    fn write<W: Write>(&self, w: &mut W) -> Res<()> {
         //dbg!(self);
 
         match self {
-            Self::Lit(v) => v.write(buf)?,
-            Self::Unary(v) => v.write(buf)?,
+            Self::Lit(v) => v.write(w)?,
+            Self::Unary(v) => v.write(w)?,
 
             _ => {
-                dbg!(self);
-                unreachable!()
+                panic!("{:#?}", self);
             }
         }
 
@@ -88,49 +74,76 @@ impl ParseExpr for Expr {
 }
 
 impl ParseExpr for ExprLit {
-    fn write(&self, buf: &mut Vec<u8>) -> Res<()> {
+    fn write<W: Write>(&self, w: &mut W) -> Res<()> {
         let ExprLit { lit, .. } = self;
 
-        buf.write_u8(1)?;
-
         match lit {
+            Lit::Bool(v) => {
+                // w.write_u8(1)?; // unnecessary
+                w.write_u8(v.value() as u8)?;
+            }
+
+            // int
             Lit::Int(v) => {
                 //dbg!(v);
                 // ?i64
                 let v: u128 = v.base10_parse()?;
 
-                write_int(buf, &v)?;
+                w.write_u8(1)?;
+                write_int(w, &v)?;
             }
 
+            // f64
             Lit::Float(v) => {
                 let v: f64 = v.base10_parse()?;
 
-                buf.write_f64::<LE>(v)?;
+                w.write_u8(1)?;
+                w.write_f64::<LE>(v)?;
             }
 
+            // char
             Lit::Char(v) => {
                 let v = v.value();
 
-                buf.write_u32::<LE>(v as u32)?;
+                w.write_u8(1)?;
+                w.write_u32::<LE>(v as u32)?;
             }
 
+            // String
             Lit::Str(v) => {
                 let v = v.value();
                 let len = v.len();
 
-                buf.write_u32::<LE>(len as u32)?;
-                buf.write_all(v.as_bytes())?;
+                w.write_u8(1)?;
+                w.write_u32::<LE>(len as u32)?;
+                w.write_all(v.as_bytes())?;
             }
 
-            Lit::Bool(v) => {
-                let v = v.value();
+            // Vec<u8>
+            Lit::ByteStr(v) => {
+                let buf = v.value();
+                let len = buf.len();
 
-                // bool is special
-                buf.pop().unwrap();
-                buf.write_u8(v as u8)?;
+                if len == 0 {
+                    // None
+                    w.write_u8(0)?;
+                } else {
+                    w.write_u8(1)?; // Some(Vec<T>)
+                    w.write_u32::<LE>(len as u32)?;
+
+                    // write T
+                    for f in buf.iter() {
+                        w.write_u8(1)?; // Some(T)
+                        w.write_u8(Flag::U8 as u8)?;
+                        w.write_u8(*f)?;
+                    }
+                }
             }
 
-            _ => unreachable!(),
+            _ => {
+                dbg!(lit);
+                unreachable!()
+            }
         }
 
         Ok(())
@@ -138,39 +151,43 @@ impl ParseExpr for ExprLit {
 }
 
 impl ParseExpr for ExprUnary {
-    fn write(&self, buf: &mut Vec<u8>) -> Res<()> {
-        use syn::UnOp::*;
-
+    fn write<W: Write>(&self, w: &mut W) -> Res<()> {
+        //dbg!(self);
         let Self { op, expr, .. } = self;
 
         match op {
-            // NOTE:
+            UnOp::Neg(..) => {}
+
             // e.g. *"u8"
-            Deref(..) => buf.write_u8(0)?,
+            // This means Option<T> is None
+            UnOp::Deref(..) => {
+                w.write_u8(0)?;
+                return Ok(());
+            }
 
-            Neg(..) => {
-                let Expr::Lit(ExprLit {
-                    lit, ..
-                }) = expr.as_ref() else {
-                    //dbg!(self);
-                    todo!()
-                };
+            _ => return Err(crate::MyErr::Unsupported),
+        }
 
-                buf.write_u8(1)?;
+        // UnOp::Neg(..)
+        let Expr::Lit(ExprLit {
+            lit, ..
+        }) = expr.as_ref()
+        else { unreachable!() };
 
-                match lit {
-                    Lit::Int(v) => {
-                        let v: i128 = v.base10_parse()?;
-                        write_int(buf, &((-1 * v) as u128))?;
-                    }
+        match lit {
+            Lit::Int(v) => {
+                let v: i128 = v.base10_parse()?;
+                let v = (-1 * v) as u128;
 
-                    Lit::Float(v) => {
-                        let v: f64 = v.base10_parse()?;
-                        buf.write_f64::<LE>(-1.0 * v)?;
-                    }
+                w.write_u8(1)?; // Some(..)
+                write_int(w, &v)?;
+            }
 
-                    _ => unreachable!(),
-                }
+            Lit::Float(v) => {
+                let v: f64 = v.base10_parse()?;
+
+                w.write_u8(1)?;
+                w.write_f64::<LE>(-1.0 * v)?;
             }
 
             _ => return Err(crate::MyErr::Unsupported),
@@ -180,50 +197,64 @@ impl ParseExpr for ExprUnary {
     }
 }
 
-pub fn write_int(buf: &mut Vec<u8>, v: &u128) -> Res<()> {
+pub fn write_int<W: Write>(w: &mut W, v: &u128) -> Res<()> {
     match *v {
         0..=0xff => {
-            buf.write_u8(Flag::U8 as u8)?;
-            buf.write_u8(*v as u8)?;
+            w.write_u8(Flag::U8 as u8)?;
+            w.write_u8(*v as u8)?;
         }
 
         0..=0xffff => {
-            buf.write_u8(Flag::U16 as u8)?;
-            buf.write_u16::<LE>(*v as u16)?;
+            w.write_u8(Flag::U16 as u8)?;
+            w.write_u16::<LE>(*v as u16)?;
         }
 
         0..=0xffff_ffff => {
-            buf.write_u8(Flag::U32 as u8)?;
-            buf.write_u32::<LE>(*v as u32)?;
+            w.write_u8(Flag::U32 as u8)?;
+            w.write_u32::<LE>(*v as u32)?;
         }
 
         0..=0xffff_ffff_ffff_ffff => {
-            buf.write_u8(Flag::U64 as u8)?;
-            buf.write_u64::<LE>(*v as u64)?;
+            w.write_u8(Flag::U64 as u8)?;
+            w.write_u64::<LE>(*v as u64)?;
         }
 
         0..=u128::MAX => {
-            buf.write_u8(Flag::U128 as u8)?;
-            buf.write_u128::<LE>(*v as u128)?;
+            w.write_u8(Flag::U128 as u8)?;
+            w.write_u128::<LE>(*v as u128)?;
         }
     }
 
     Ok(())
 }
 
-pub fn read_int<W: ParseBytes>(buf: &mut W) -> Res<u128> {
-    if buf.read_u8()? != 1 {
+pub fn read_int<W: Read>(w: &mut W) -> Res<u128> {
+    if w.read_u8()? != 1 {
         return Ok(0);
     }
 
-    let f = Flag::from(buf.read_u8()?);
+    let f = Flag::from(w.read_u8()?);
     let res = match f {
-        Flag::U8 => buf.read_u8()? as u128,
-        Flag::U16 => buf.read_u16::<LE>()? as u128,
-        Flag::U32 => buf.read_u32::<LE>()? as u128,
-        Flag::U64 => buf.read_u64::<LE>()? as u128,
-        Flag::U128 => buf.read_u128::<LE>()? as u128,
+        Flag::U8 => w.read_u8()? as u128,
+        Flag::U16 => w.read_u16::<LE>()? as u128,
+        Flag::U32 => w.read_u32::<LE>()? as u128,
+        Flag::U64 => w.read_u64::<LE>()? as u128,
+        Flag::U128 => w.read_u128::<LE>()? as u128,
     };
 
     Ok(res)
+}
+
+impl From<u8> for Flag {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => Self::U8,
+            2 => Self::U16,
+            4 => Self::U32,
+            8 => Self::U64,
+            16 => Self::U128,
+
+            _ => unreachable!(),
+        }
+    }
 }

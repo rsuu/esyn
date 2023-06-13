@@ -13,8 +13,8 @@ pub enum MyErr {
     #[error("")]
     Debug(String),
 
-    #[error("panic on {0:?}")]
-    On(&'static str),
+    #[error("not found {0}")]
+    NotFound(String),
 
     #[error("parse int")]
     ParseInt(#[from] std::num::ParseIntError),

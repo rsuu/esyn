@@ -2,6 +2,7 @@ pub mod auto;
 pub mod bytes;
 pub mod error;
 pub mod ext;
+pub mod func;
 pub mod parser;
 
 // macro
@@ -15,5 +16,6 @@ pub use {
 
 pub use {
     error::{MyErr, Res},
+    func::{Func, FuncMap},
     parser::Esyn,
 };
