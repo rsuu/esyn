@@ -1,10 +1,3 @@
-// TODO: remove
-//   1. MacroMap
-//      HashMap<Fn, Expr>
-//   2. match if macro!()
-//               macro![]
-//               macro!{}
-
 use crate::{visit::*, *};
 
 use std::cell::OnceCell;
@@ -43,7 +36,6 @@ pub struct FnBlock<'ast> {
 
     pub ret: RetType,
     //pub ext_expr:Vec<Expr>
-    pub vec_stmt_macro: Vec<StmtMacro>,
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -148,37 +140,6 @@ impl<'ast> Esyn<'ast> {
 
         Ok(())
     }
-
-    pub fn parse_stmt_macro<'other, Output, F>(&'ast self, fn_name: &str, f: F) -> Res<Output>
-    where
-        F: FnMut(&FnBlock, WrapStmtMacro<'ast>) -> Option<Output> + 'other,
-    {
-        let fb = self.get_fn(fn_name)?;
-
-        let mut vsm = VisitStmtMacro::new();
-        for ast in fb.vec_stmt_macro.iter() {
-            vsm.visit_stmt_macro(ast);
-        }
-
-        let mut f = Box::new(f);
-        for mac in vsm.vec.into_iter() {
-            match mac {
-                MacroRT::Core(v) => {
-                    todo!()
-                }
-
-                MacroRT::Crate(v) => {
-                    let res = (f)(fb, v);
-
-                    if let Some(res) = res {
-                        return Ok(res);
-                    }
-                }
-            }
-        }
-
-        Err(MyErr::Todo)
-    }
 }
 
 impl<'ast> Esyn<'ast> {
@@ -204,7 +165,6 @@ impl<'ast> FnBlock<'ast> {
             map_local: Default::default(),
             map_assign: Default::default(),
             map_alias: Default::default(),
-            vec_stmt_macro: Default::default(),
         }
     }
 
@@ -423,20 +383,15 @@ impl RetType {
 impl<'ast> Visit<'ast> for FnBlock<'ast> {
     fn visit_stmt(&mut self, i: &'ast Stmt) {
         match i {
-            Stmt::Expr(Expr::Block(ast), Some(..)) => {
+            Stmt::Expr(Expr::Block(_ast), Some(..)) => {
                 // TODO:
                 // ?Fn OR visit
-            }
-
-            Stmt::Macro(ast) => {
-                self.vec_stmt_macro.push(ast.clone());
             }
 
             Stmt::Local(ast) => self.map_local.visit_local(ast),
 
             Stmt::Expr(Expr::Assign(ast), Some(..)) => self.map_assign.visit_expr_assign(ast),
             Stmt::Expr(Expr::Call(ast), ..) => self.visit_expr_call(ast),
-            Stmt::Expr(Expr::Macro(ast), ..) => self.visit_expr_macro(ast),
 
             _ => {}
         }

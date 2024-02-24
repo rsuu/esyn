@@ -62,18 +62,18 @@ struct Inner {
 // u16
 
 // fn
-pub fn parse_call_u16(expr: &syn::ExprCall) -> Res<syn::Expr> {
+pub fn parse_call_u16(_expr: &syn::ExprCall) -> Res<syn::Expr> {
     Ok(syn::parse2(quote! {16})?)
 }
 
-pub fn parse_call_u16_inner(expr: &syn::ExprCall) -> Res<syn::Expr> {
+pub fn parse_call_u16_inner(_expr: &syn::ExprCall) -> Res<syn::Expr> {
     Ok(syn::parse2(quote! {16})?)
 }
 
 // u32
 
 // fn
-pub fn parse_call_u32(expr: &syn::ExprCall) -> Res<syn::Expr> {
+pub fn parse_call_u32(_expr: &syn::ExprCall) -> Res<syn::Expr> {
     Ok(syn::parse2(quote! {32})?)
 }
 
@@ -82,9 +82,7 @@ pub fn parse_call_u32(expr: &syn::ExprCall) -> Res<syn::Expr> {
 //      ^^ LitInt
 pub fn parse_macro(expr: &syn::ExprMacro) -> Res<syn::Expr> {
     dbg!(&expr);
-    let syn::ExprMacro { mac, attrs } = expr else {
-        unreachable!()
-    };
+    let syn::ExprMacro { mac, attrs: _ } = expr;
 
     Ok(syn::parse2(mac.tokens.to_owned())?)
 }

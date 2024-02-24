@@ -61,7 +61,7 @@ For more examples take a look on [tests](https://github.com/rsuu/esyn/tree/main/
 
 ## Features
 
-### Custom Syntax(Macro-based)
+### Custom Syntax
 
 see [examples](https://github.com/rsuu/esyn/tree/main/crates/esyn/examples/dev_derive_attr.rs)
 
@@ -83,7 +83,6 @@ struct Test {
 
 // ...
 ```
-
 
 ## Supported Types
 

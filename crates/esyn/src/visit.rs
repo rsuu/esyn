@@ -20,66 +20,15 @@ use syn::*;
 
 pub type FnVisit<'other, 'ast, Input, Output> = Box<dyn FnMut(Input) -> Option<Output> + 'other>;
 
-pub type FnVisitStmtMacro<'other, 'ast, Output> =
-    FnVisit<'other, 'ast, WrapStmtMacro<'ast>, Output>;
-
 #[derive(Debug, Default)]
 pub struct VisitItemFn<'ast> {
     pub inner: HashMap<&'ast Ident, FnBlock<'ast>>,
-}
-
-pub struct VisitStmtMacro<'ast> {
-    pub vec: Vec<MacroRT<'ast>>,
-    pub index: usize,
 }
 
 pub struct WrapExprBlock<'ast> {
     i: &'ast ExprBlock,
 
     pub depth: usize,
-}
-
-#[derive(Debug)]
-pub struct WrapStmtMacro<'ast> {
-    i: &'ast StmtMacro,
-
-    path: String,
-    index: usize,
-}
-
-impl<'ast> WrapStmtMacro<'ast> {
-    pub fn parse2<T>(&self) -> Res<T>
-    where
-        T: syn::parse::Parse,
-    {
-        Ok(syn::parse2(self.tokens().clone())?)
-    }
-
-    pub fn path(&self) -> &str {
-        &self.path
-    }
-
-    pub fn index(&self) -> &usize {
-        &self.index
-    }
-
-    pub fn tokens(&self) -> &TokenStream {
-        &self.i.mac.tokens
-    }
-}
-
-pub enum MacroRT<'ast> {
-    Core(WrapStmtMacro<'ast>),
-    Crate(WrapStmtMacro<'ast>),
-}
-
-impl<'ast> VisitStmtMacro<'ast> {
-    pub fn new() -> Self {
-        Self {
-            vec: Vec::new(),
-            index: 0,
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -110,54 +59,6 @@ pub struct CallAlias<'ast> {
 pub struct InnerCallAlias<'ast> {
     pub src_head: &'ast Ident,
     pub src_body: Vec<&'ast Ident>,
-}
-
-// TODO: visit macro
-//
-// Esyn::init().vi(|ast| {
-//    ...
-// });
-//
-
-impl<'ast> Visit<'ast> for VisitStmtMacro<'ast> {
-    fn visit_stmt_macro(&mut self, i: &'ast StmtMacro) {
-        //dbg!(i);
-
-        let StmtMacro {
-            attrs,
-            mac:
-                Macro {
-                    path:
-                        Path {
-                            leading_colon,
-                            segments,
-                        },
-                    bang_token,
-                    delimiter,
-                    tokens,
-                },
-            semi_token,
-        } = i;
-
-        let flag = leading_colon.is_some();
-        let path = join_path_seg(segments, "::");
-
-        let wrap = WrapStmtMacro {
-            path,
-            index: self.vec.len(),
-            i,
-        };
-
-        let res = {
-            if flag {
-                MacroRT::Core(wrap)
-            } else {
-                MacroRT::Crate(wrap)
-            }
-        };
-
-        self.vec.push(res);
-    }
 }
 
 impl<'ast> Visit<'ast> for VisitLocal<'ast> {

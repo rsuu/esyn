@@ -2,6 +2,9 @@ mod attr;
 mod bound;
 mod default;
 mod ders;
+mod ders_struct_named;
+mod ders_struct_unit;
+mod ders_struct_unnamed;
 mod ser;
 
 use proc_macro2::TokenStream;

@@ -13,7 +13,7 @@ fn d1() {
     struct K {}
 
     impl<'ast> Visit<'ast> for K {
-        fn visit_item_fn(&mut self, i: &'ast ItemFn) {}
+        fn visit_item_fn(&mut self, _i: &'ast ItemFn) {}
     }
 }
 
