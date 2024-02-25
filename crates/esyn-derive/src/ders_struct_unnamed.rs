@@ -4,11 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::*;
 
-pub fn parse(
-    struct_impl: &mut TokenStream,
-    input: &DeriveInput,
-    fields: &FieldsUnnamed,
-) -> Result<()> {
+pub fn parse(input: &DeriveInput, fields: &FieldsUnnamed) -> Result<TokenStream> {
     let struct_ident = &input.ident;
     let generics = bound::de_trait_bounds_struct(input.generics.clone());
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
@@ -23,10 +19,10 @@ pub fn parse(
         res
     };
 
-    struct_impl.extend(quote! {
+    Ok(quote! {
 
     impl #impl_generics
-        esyn::DeRs<syn::Expr>
+        ::esyn::DeRs<syn::Expr>
     for #struct_ident #ty_generics
         #where_clause
     {
@@ -50,14 +46,14 @@ pub fn parse(
 
             Ok(Self(
                 #(
-                    <#field_ty as DeRs<Expr>>::de(&args[#idx])?,
+                    <#field_ty as DeRs<Expr>>::de(&args[#idx])? ,
                 )*
             ))
         }
     }
 
     impl #impl_generics
-        esyn::MutPath
+        ::esyn::MutPath
     for #struct_ident #ty_generics
         #where_clause
     {
@@ -68,7 +64,5 @@ pub fn parse(
         }
     }
 
-    });
-
-    Ok(())
+    })
 }

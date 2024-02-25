@@ -83,7 +83,7 @@ for #struct_ident #ty_generics
     fn esyn_default() -> Self {
         Self(
             #(
-                <#field_ty as EsynDefault>::esyn_default(),
+                <#field_ty as EsynDefault>::esyn_default() ,
             )*
         )
     }

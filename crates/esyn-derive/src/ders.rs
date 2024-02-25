@@ -21,31 +21,13 @@ pub fn derive_de(input: &DeriveInput) -> Result<TokenStream> {
 }
 
 fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> {
-    let mut struct_impl = TokenStream::new();
-    match data {
-        DataStruct {
-            fields: Fields::Named(fields),
-            ..
-        } => {
-            ders_struct_named::parse(&mut struct_impl, input, fields)?;
-        }
+    let fields = &data.fields;
 
-        DataStruct {
-            fields: Fields::Unnamed(fields),
-            ..
-        } => {
-            ders_struct_unnamed::parse(&mut struct_impl, input, fields)?;
-        }
-
-        DataStruct {
-            fields: Fields::Unit,
-            ..
-        } => {
-            ders_struct_unit::parse(&mut struct_impl, input)?;
-        }
+    match fields {
+        Fields::Unit => ders_struct_unit::parse(input),
+        Fields::Unnamed(v) => ders_struct_unnamed::parse(input, v),
+        Fields::Named(v) => ders_struct_named::parse(input, v),
     }
-
-    Ok(struct_impl)
 }
 
 fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> {
@@ -53,96 +35,24 @@ fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> {
     let generics = bound::de_trait_bounds_enum(input.generics.clone());
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let mut enum_impl = TokenStream::new();
     let mut enum_match = TokenStream::new();
-    let _enum_default = TokenStream::new();
-    let _enum_to_tokens = TokenStream::new();
     for var in data.variants.iter() {
         let var_ident = &var.ident;
         let fields = &var.fields;
 
-        //let field_name: &Vec<_> = &fields.iter().map(|f| &f.ident).collect();
-        let field_ty: &Vec<_> = &fields.iter().map(|f| &f.ty).collect();
+        let ts = match fields {
+            Fields::Unit => ders_enum_unit::parse(var_ident)?,
+            Fields::Unnamed(..) => ders_enum_unnamed::parse(var_ident, fields)?,
+            Fields::Named(..) => ders_enum_named::parse(input, var_ident, fields)?,
+        };
 
-        let _match_name = format!("{}::{}", enum_ident, var_ident);
-
-        match fields {
-            // impl enum unit
-            Fields::Unit => {
-                enum_match.extend(quote! {
-                // expand:
-                //   "Unit1" => Self::Unit1,
-                stringify!(#var_ident) => Self::#var_ident,
-                });
-            }
-
-            // impl enum unnamed
-            Fields::Unnamed(_) => {
-                enum_match.extend(quote! {
-                stringify!(#var_ident) => {
-                    let Expr::Call(ExprCall {
-                        args, ..
-                    }
-                    ) = ast
-                    else { unreachable!() };
-
-                    let mut iter = args.iter();
-                    Self::#var_ident(
-                        #(
-                            <#field_ty as DeRs<Expr>>::de( &iter.next().unwrap() ).unwrap(),
-                        )*
-                    )
-                }
-
-                });
-            }
-
-            // impl enum named
-            Fields::Named(_) => {
-                let mut field_name = vec![];
-                let mut field_ty = vec![];
-                for f in fields.iter() {
-                    field_ty.push(&f.ty);
-                    field_name.push(&f.ident);
-                }
-
-                enum_match.extend(quote! {
-                // expand:
-                //   "NamedField" => { ... }
-                stringify!(#var_ident) => {
-                    //dbg!(ast);
-                    let Expr::Struct(ExprStruct {
-                        fields, ..
-                    }) = ast
-                    else { unreachable!() };
-
-                    Self::#var_ident {
-                        #(
-                            #field_name: {
-                                let expr = ExprHelper::get_named_field_expr(
-                                    fields,
-                                    stringify!(#field_name)
-                                );
-
-                                if let Ok(expr) = expr {
-                                    <#field_ty as DeRs<Expr>>::de(expr)?
-                                } else {
-                                    EsynDefault::esyn_default()
-                                }
-                            },
-                        )*
-                    }
-                }
-
-                });
-            }
-        }
+        enum_match.extend(ts);
     }
 
-    // impl enum
-    enum_impl.extend(quote! {
+    Ok(quote! {
+
     impl #impl_generics
-        esyn::DeRs<syn::Expr>
+        ::esyn::DeRs<syn::Expr>
     for #enum_ident #ty_generics
         #where_clause
     {
@@ -187,7 +97,7 @@ fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> {
     }
 
     impl #impl_generics
-        esyn::MutPath
+        ::esyn::MutPath
     for #enum_ident #ty_generics
         #where_clause
     {
@@ -197,7 +107,5 @@ fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> {
         }
     }
 
-    });
-
-    Ok(enum_impl)
+    })
 }

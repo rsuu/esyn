@@ -16,18 +16,14 @@ pub mod __quote {
 }
 
 pub use {
-    // trait
     auto::*,
-
-    // macro
-    esyn_derive::{EsynDe, EsynSer},
-
-    // struct/enum
+    error::{MyErr, Res},
+    ext::ByteStr,
+    parser::{Esyn, EsynBuilder, FnBlock},
+    utils::ExprHelper,
     {
-        error::{MyErr, Res},
-        ext::ByteStr,
-        parser::{Esyn, EsynBuilder, FnBlock},
-        utils::ExprHelper,
+        // macro
+        esyn_derive::{EsynDe, EsynSer},
     },
 };
 
@@ -35,5 +31,5 @@ pub use {
 pub use {
     proc_macro2::{self, TokenStream},
     quote::{quote, ToTokens},
-    syn::{self, punctuated::Punctuated, visit::Visit},
+    syn::{self, parse::Parse, punctuated::Punctuated, visit::Visit, Expr},
 };

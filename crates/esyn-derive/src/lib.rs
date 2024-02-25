@@ -2,6 +2,9 @@ mod attr;
 mod bound;
 mod default;
 mod ders;
+mod ders_enum_named;
+mod ders_enum_unit;
+mod ders_enum_unnamed;
 mod ders_struct_named;
 mod ders_struct_unit;
 mod ders_struct_unnamed;
@@ -10,7 +13,7 @@ mod ser;
 use proc_macro2::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
-#[proc_macro_derive(EsynDe, attributes(parse))]
+#[proc_macro_derive(EsynDe, attributes(custom_syntax))]
 pub fn derive_de(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let mut res = TokenStream::new();

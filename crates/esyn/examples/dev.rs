@@ -354,12 +354,12 @@ fn impls() {
     //    }
     //}
 
-    //impl EsynDefault for S2 {
+    //impl CustomSyntax for S2 {
     //    fn esyn_default() -> Self {
     //        Self {
-    //            _u8: <u8 as EsynDefault>::esyn_default(),
-    //            _bool_default: <_bool_default as EsynDefault>::esyn_default(),
-    //            _vec: <Vec<u8> as EsynDefault>::esyn_default(),
+    //            _u8: <u8 as CustomSyntax>::esyn_default(),
+    //            _bool_default: <_bool_default as CustomSyntax>::esyn_default(),
+    //            _vec: <Vec<u8> as CustomSyntax>::esyn_default(),
     //        }
     //    }
     //}

@@ -58,7 +58,7 @@ impl DeRs<ExprUnary> for $t {
             Lit::Int(v) => format!("-{}", v.base10_digits()).parse()?,
             Lit::Float(v) => format!("-{}", v.base10_digits()).parse()?,
 
-            _ => unimplemented!(),
+            _ => unreachable!("{lit:#?}"),
         })
     }
 }
@@ -77,11 +77,13 @@ impl< $($t: DeRs<Expr>),+ > DeRs<Expr> for ( $($t,)+ ) {
         };
 
         Ok(
-            ($(
-                <$t as DeRs<Expr>>::de(
-                    &iter.next().unwrap()
-                ).unwrap(),
-            )+)
+            (
+                $(
+                    <$t as DeRs<Expr>>::de(
+                        &iter.next().unwrap()
+                    ).unwrap() ,
+                )+
+            )
         )
     }
 }
@@ -121,7 +123,6 @@ impl_DeRs_for_tuple!(A, B, C, D, E, F, G, H, I, J, K, L);
 
 impl DeRs<Expr> for () {
     fn de(_ast: &Expr) -> Res<Self> {
-        // TODO: assert_eq
         Ok(())
     }
 }
@@ -254,16 +255,3 @@ impl DeRs<Expr> for String {
         })
     }
 }
-
-//pub struct FnExpr {}
-//
-//impl FnExpr {
-//    pub fn f<F, O>(f: F, v: &syn::Expr) -> O
-//    where
-//        F: Fn(&syn::Expr) -> O + 'static,
-//    {
-//        (f)(v)
-//    }
-//}
-
-// ?impl DeRs for &str

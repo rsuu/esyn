@@ -34,6 +34,9 @@ pub enum MyErr {
     #[error("todo")]
     Todo,
 
+    #[error("Unimplemented")]
+    Unimplemented,
+
     #[error("")]
     Str(&'static str),
 

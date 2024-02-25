@@ -117,6 +117,9 @@ fn main() {
         _struct_unnamed: StructUnnamed(9, "abcd"),
         _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
         _struct_tuple3: StructUnnamed3(1, 2),
+        // TODO: ?impl or not
+        //       https://rust-lang.github.io/rust-clippy/master/index.html#/init_numbered_fields
+        //_struct_tuple3: StructUnnamed3 { 0:1, 1:2 },
     };
 }
 "#;
@@ -131,6 +134,7 @@ fn main() {
             _struct_empty2: StructEmpty2(),
             _struct_unnamed: StructUnnamed(9, "abcd".to_string()),
             _struct_tuple: StructUnnamed2(1, (2, (3, 4))),
+
             _struct_tuple3: StructUnnamed3(1, 2),
             _struct_unit: StructUnit,
         }

@@ -10,13 +10,31 @@ use syn::*;
 #[repr(transparent)]
 pub struct Wrap<T>(pub T);
 
-impl<T> Wrap<T> {
+impl<T> Wrap<T>
+where
+    T: EsynSer,
+{
     pub fn get(self) -> T {
         self.0
     }
+
+    pub fn get_ref(&self) -> &T {
+        &self.0
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.0
+    }
+
+    pub fn to_expr(self) -> syn::Expr {
+        syn::parse_quote!( #self )
+    }
 }
 
-impl<T: EsynSer> ToTokens for Wrap<T> {
+impl<T> ToTokens for Wrap<T>
+where
+    T: EsynSer,
+{
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(<T as EsynSer>::ser(&self.0));
     }

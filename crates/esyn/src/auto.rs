@@ -1,10 +1,14 @@
+pub mod custom_syntax;
 pub mod default;
 pub mod ders;
 pub mod mut_path;
 pub mod ser;
 pub mod wrap;
 
-pub use {default::EsynDefault, ders::DeRs, mut_path::MutPath, ser::EsynSer, wrap::Wrap};
+pub use {
+    custom_syntax::CustomSyntax, default::EsynDefault, ders::DeRs, mut_path::MutPath, ser::EsynSer,
+    wrap::Wrap,
+};
 
 use crate::{Res, TokenStream};
 

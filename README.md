@@ -41,7 +41,6 @@ fn main() {
         .set_let("a")
         .get_once::<Test>(config)
         .unwrap();
-
     assert_eq!(test, *a);
 
     // Serialization
@@ -63,7 +62,7 @@ For more examples take a look on [tests](https://github.com/rsuu/esyn/tree/main/
 
 ### Custom Syntax
 
-see [examples](https://github.com/rsuu/esyn/tree/main/crates/esyn/examples/dev_derive_attr.rs)
+see [custom_syntax](https://github.com/rsuu/esyn/tree/main/crates/esyn/examples/custom_syntax.rs)
 
 In short:
 
@@ -71,15 +70,19 @@ In short:
 // ...
 
 #[derive(Debug, EsynDe, EsynSer, Default)]
+#[custom_syntax]
 struct Test {
-    // parse:
-    //   8  |  f()  |  m!(32)  |  m![32]  |  m!{32}
-    #[parse(
-        Expr::Call => parse_fn(),
-        Expr::Macro => parse_macro(),
-    )]
-    _u32: u32,
+    val: u8,
 }
+
+impl CustomSyntax for Test {
+    // ...
+}
+
+// config:
+// fn main() {
+//     let test = m!(123);
+// }
 
 // ...
 ```

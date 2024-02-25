@@ -4,12 +4,12 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::*;
 
-pub fn parse(struct_impl: &mut TokenStream, input: &DeriveInput) -> Result<()> {
+pub fn parse(input: &DeriveInput) -> Result<TokenStream> {
     let struct_ident = &input.ident;
     let generics = bound::de_trait_bounds_struct(input.generics.clone());
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    struct_impl.extend(quote! {
+    Ok(quote! {
 
     impl #impl_generics
         esyn::DeRs<syn::Expr>
@@ -43,7 +43,5 @@ pub fn parse(struct_impl: &mut TokenStream, input: &DeriveInput) -> Result<()> {
         }
     }
 
-    });
-
-    Ok(())
+    })
 }

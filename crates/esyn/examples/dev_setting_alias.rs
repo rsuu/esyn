@@ -4,7 +4,7 @@ fn main() {
     let config = r#"
 fn main() {
 // TODO:
-//    ::scope::AliasMap::new!(
+//    ::AliasMap::new!(
 //        a.a     => a,
 //        a.b.c.d => b,
 //    );
