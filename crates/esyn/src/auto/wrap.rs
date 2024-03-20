@@ -10,10 +10,7 @@ use syn::*;
 #[repr(transparent)]
 pub struct Wrap<T>(pub T);
 
-impl<T> Wrap<T>
-where
-    T: EsynSer,
-{
+impl<T> Wrap<T> {
     pub fn get(self) -> T {
         self.0
     }
@@ -26,7 +23,10 @@ where
         &mut self.0
     }
 
-    pub fn to_expr(self) -> syn::Expr {
+    pub fn to_expr(self) -> syn::Expr
+    where
+        T: EsynSer,
+    {
         syn::parse_quote!( #self )
     }
 }

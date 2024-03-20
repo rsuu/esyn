@@ -43,7 +43,7 @@ pub enum RetType {
     #[default]
     Unit,
 
-    Res,
+    Any,
 }
 
 impl<'ast> Esyn<'ast> {
@@ -91,8 +91,8 @@ impl<'ast> Esyn<'ast> {
             .get(&fn_name)
             .ok_or(err! {NotFound: "{fn_name}"})?;
 
-        if ret != &RetType::Res {
-            return err!(Expected "Res", "TODO");
+        if ret != &RetType::Any {
+            return err!(Expected "Any", "TODO");
         }
 
         let Stmt::Expr(expr, None) = &inner.block.stmts[0] else {
@@ -346,7 +346,7 @@ impl EsynBuilder {
             } => esyn.get_value(fn_name, let_name),
 
             // e.g.
-            //   fn main() -> Res {}
+            //   fn main() -> Any {}
             //                ^^^
             Self {
                 ref fn_name,
@@ -368,11 +368,11 @@ impl RetType {
 
         match ty.as_ref() {
             // e.g.
-            //   fn f() -> Res { ... }
+            //   fn f() -> Any{ ... }
             Type::Path(TypePath { path, .. })
-                if (path.segments.len() == 1 && path.segments[0].ident == "Res") =>
+                if (path.segments.len() == 1 && path.segments[0].ident == "Any") =>
             {
-                Self::Res
+                Self::Any
             }
 
             _ => Default::default(),

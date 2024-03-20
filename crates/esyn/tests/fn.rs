@@ -150,15 +150,15 @@ fn main() {
     };
 }
 
-fn return_any_struct_named() -> Res {
-    Res {
+fn return_any_struct_named() -> Any {
+    Any {
         _u16: 16,
         _u8: 8,
     }
 }
 
-fn return_any_enum_named() -> Res {
-    Res::A {
+fn return_any_enum_named() -> Any {
+    Any::A {
         _u8: 8,
         _bool: false,
     }
