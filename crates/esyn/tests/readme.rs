@@ -31,7 +31,7 @@ fn main() {
         .get_once::<Test>(config)
         .unwrap();
 
-    assert_eq!(test, *a);
+    assert_eq!(a.get_ref(), &test);
 
     // Serialization
     let code = quote! {

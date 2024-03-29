@@ -50,7 +50,7 @@ struct Macros {
 
 impl CustomSyntax for Func {
     fn parse_call(expr: &syn::ExprCall) -> Res<syn::Expr> {
-        let v = expr
+        let a = expr
             .args
             .first()
             .unwrap()
@@ -58,14 +58,14 @@ impl CustomSyntax for Func {
             .to_string()
             .parse::<u8>()?;
 
-        Ok(syn::parse_quote!(Func { a: #v }))
+        Ok(Func { a }.into_expr())
     }
 }
 
 impl CustomSyntax for Macros {
     fn parse_macro(expr: &syn::ExprMacro) -> Res<syn::Expr> {
-        let v = expr.mac.tokens.to_string().parse::<u8>()?;
+        let a = expr.mac.tokens.to_string().parse::<u8>()?;
 
-        Ok(syn::parse_quote!(Macros { a: #v }))
+        Ok(Macros { a }.into_expr())
     }
 }

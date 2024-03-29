@@ -17,3 +17,10 @@ pub trait CustomSyntax {
         Err(MyErr::Unimplemented)
     }
 }
+
+pub trait WrapExpr: Sized + EsynSer {
+    fn into_expr(self) -> syn::Expr {
+        Wrap::new(self).into_expr()
+    }
+}
+impl<T: Sized + EsynSer> WrapExpr for T {}

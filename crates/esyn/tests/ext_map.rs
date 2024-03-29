@@ -20,10 +20,11 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_let("a")
             .get_once::<Test>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test {
             hash_map: HashMap::from_iter([(1, 2), (3, 4)].into_iter()),
             btree_map: BTreeMap::from_iter([(1, true), (2, false)].into_iter()),

@@ -26,11 +26,6 @@ struct StructNamed<T> {
     _vec_t: Vec<T>,
 }
 
-fn en() {
-    // ? #[derive(Debug, PartialEq, EsynDe)]
-    enum EnumEmpty {}
-}
-
 #[derive(Debug, PartialEq, EsynDe)]
 enum EnumUnit {
     Unit1,
@@ -120,10 +115,11 @@ fn main() {
 }
 "#;
 
-    let a = &EsynBuilder::new()
+    let res = EsynBuilder::new()
         .set_let("a")
         .get_once::<Test>(config)
         .unwrap();
+    let a = res.get_ref();
     //dbg!(&a);
 
     assert_eq!(a._enum_unit, EnumUnit::Unit2);
@@ -167,4 +163,10 @@ fn main() {
     assert_eq!(a._enum4, Enum::Unit1);
     assert_eq!(a._enum5, Enum::Unit3);
     assert_eq!(a._opt_enum_unit, Some(EnumUnit::Unit1));
+}
+
+#[test]
+fn enum_empty() {
+    // ? #[derive(Debug, PartialEq, EsynDe)]
+    enum EnumEmpty {}
 }

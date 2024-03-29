@@ -114,7 +114,7 @@ impl<Opt> CustomSyntax for Key<Opt> {
 
         let input: Tmp = parse2(expr.mac.tokens.clone())?;
 
-        let mut key: Key = Key::default();
+        let mut key = Key::default();
         for f in input.inner.iter() {
             match f.to_string().to_uppercase().as_str() {
                 "CTRL" => key.ctrl = Some(Ch::Ctrl),
@@ -160,6 +160,6 @@ impl<Opt> CustomSyntax for Key<Opt> {
             }
         }
 
-        Ok(Wrap(key).to_expr())
+        Ok(key.into_expr())
     }
 }

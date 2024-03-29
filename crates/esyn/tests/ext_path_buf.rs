@@ -18,10 +18,11 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_let("a")
             .get_once::<Test>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test {
             _path_buf: PathBuf::from("./a/b/c"),
         }

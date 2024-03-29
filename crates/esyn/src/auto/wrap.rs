@@ -1,16 +1,16 @@
 use crate::*;
-use std::{
-    fmt::{Debug, Display},
-    hash::Hash,
-    ops::{Deref, DerefMut},
-};
+use std::fmt::Debug;
 use syn::*;
 
 // REFS: https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
 #[repr(transparent)]
-pub struct Wrap<T>(pub T);
+pub struct Wrap<T>(T);
 
 impl<T> Wrap<T> {
+    pub fn new(v: T) -> Self {
+        Self(v)
+    }
+
     pub fn get(self) -> T {
         self.0
     }
@@ -23,7 +23,7 @@ impl<T> Wrap<T> {
         &mut self.0
     }
 
-    pub fn to_expr(self) -> syn::Expr
+    pub fn into_expr(self) -> syn::Expr
     where
         T: EsynSer,
     {
@@ -51,51 +51,8 @@ where
     }
 }
 
-impl<T> AsRef<T> for Wrap<T> {
-    fn as_ref(&self) -> &T {
-        &self.0
-    }
-}
-
-impl<T> Deref for Wrap<T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for Wrap<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T> From<T> for Wrap<T> {
-    fn from(value: T) -> Self {
-        Self(value)
-    }
-}
-
-impl<T: Display> Display for Wrap<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-
 impl<T: Debug> Debug for Wrap<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
-    }
-}
-
-impl<T: PartialEq> PartialEq<T> for Wrap<T> {
-    fn eq(&self, other: &T) -> bool {
-        &self.0 == other
-    }
-}
-
-impl<T: Hash> Hash for Wrap<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
     }
 }

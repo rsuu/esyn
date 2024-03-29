@@ -118,7 +118,7 @@ fn main() {
     let _neg_float = &esyn.get_value::<NegFloat>("main", "neg_float").unwrap();
 
     assert_eq!(
-        uint,
+        uint.get_ref(),
         &Uint {
             _u8_max: 255u8,
             _u8_min: 0u8,
@@ -134,7 +134,7 @@ fn main() {
     );
 
     assert_eq!(
-        int,
+        int.get_ref(),
         &Int {
             _i8_max: 127i8,
             _i8_min: -128i8,
@@ -204,7 +204,7 @@ fn main() {
     let _neg_float = &esyn.get_value::<NegFloat>("main", "neg_float").unwrap();
 
     assert_eq!(
-        uint,
+        uint.get_ref(),
         &Uint {
             _u8_max: 255u8,
             _u8_min: 0u8,
@@ -220,7 +220,7 @@ fn main() {
     );
 
     assert_eq!(
-        int,
+        int.get_ref(),
         &Int {
             _i8_max: 27i8,
             _i8_min: -28i8,
@@ -290,7 +290,7 @@ fn main() {
     let esyn = Esyn::new(config);
     esyn.init().unwrap();
 
-    let mix = &esyn.get_value::<Mix<String>>("main", "mix").unwrap();
+    let mix = esyn.get_value::<Mix<String>>("main", "mix").unwrap().get();
 
     assert_eq!(mix._vec, ["aa", "bb", "cc"]);
     assert_eq!(mix._vec_f32, [0.1, 0.2, 0.3]);
@@ -386,7 +386,7 @@ fn main() {
     let a = &esyn.get_value::<Test>("main", "a").unwrap();
 
     assert_eq!(
-        a,
+        a.get_ref(),
         &Test {
             id: 123456789123,
             name: "hi".to_string(),
@@ -427,7 +427,7 @@ fn main() {
         .get_once::<()>(config)
         .unwrap();
 
-    assert_eq!(a, ());
+    assert_eq!(a.get(), ());
 }
 
 // TODO:
@@ -451,7 +451,8 @@ fn main() {
     let a = &EsynBuilder::new()
         .set_let("a")
         .get_once::<Test>(config)
-        .unwrap();
+        .unwrap()
+        .get();
 
     assert_eq!(a._char, 'o');
     assert_eq!(a._lit_byte.value(), &[97, 98, 99]);

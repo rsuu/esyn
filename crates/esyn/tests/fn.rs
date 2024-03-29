@@ -71,11 +71,12 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_fn("main")
             .set_let("a")
             .get_once::<Test2>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test2 {
             _s1: S1 { _u8: 4 },
             l1: L1 {
@@ -118,11 +119,12 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_fn("main")
             .set_let("a")
             .get_once::<Test2>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test2 {
             _s1: S1 { _u8: 4 },
             l1: L1 {
@@ -169,20 +171,22 @@ fn return_any_enum_named() -> Any {
     esyn.init().unwrap();
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_fn("return_any_struct_named")
             .flag_res()
             .get::<Test>(&esyn)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test { _u16: 16, _u8: 8 }
     );
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_fn("return_any_enum_named")
             .flag_res()
             .get::<Enum>(&esyn)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Enum::A {
             _u8: 8,
             _bool: false,
@@ -190,11 +194,12 @@ fn return_any_enum_named() -> Any {
     );
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_fn("return_any_enum_named")
             .flag_res()
             .get_once::<Enum>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Enum::A {
             _u8: 8,
             _bool: false,

@@ -46,12 +46,14 @@ fn f2() {
         .set_fn("f1")
         .set_let("a")
         .get_once::<Tu8>(config)
-        .unwrap();
+        .unwrap()
+        .get();
     let f2 = &EsynBuilder::new()
         .set_fn("f2")
         .set_let("a")
         .get_once::<Tu16>(config)
-        .unwrap();
+        .unwrap()
+        .get();
 
     let e = Esyn::new(config);
     e.init().unwrap();
@@ -60,16 +62,17 @@ fn f2() {
         .set_fn("f1")
         .set_let("a")
         .get_once::<Tu8>(config)
-        .unwrap();
-
+        .unwrap()
+        .get();
     let f21 = &EsynBuilder::new()
         .set_fn("f2")
         .set_let("a")
         .get::<Tu16>(&e)
-        .unwrap();
+        .unwrap()
+        .get();
 
-    assert_eq!(**f1, **f11);
-    assert_eq!(**f2, **f21);
+    assert_eq!(f1, f11);
+    assert_eq!(f2, f21);
 }
 
 fn syn_parse_str() {
@@ -83,7 +86,7 @@ Test {
     )
     .unwrap();
 
-    assert_eq!(a.0._u8, 1);
+    assert_eq!(a.get_ref()._u8, 1);
 }
 
 #[derive(Debug, Default, EsynDe, EsynSer, PartialEq)]

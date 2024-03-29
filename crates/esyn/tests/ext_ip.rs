@@ -25,10 +25,11 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_let("a")
             .get_once::<Test>(config)
-            .unwrap(),
+            .unwrap()
+            .get_ref(),
         &Test {
             v1: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
             v2: IpAddr::V6(Ipv6Addr::new(127, 0, 0, 1, 1, 2, 3, 4)),

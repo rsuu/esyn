@@ -75,7 +75,7 @@ impl<'ast> Esyn<'ast> {
 
         fb.exec(&mut res, let_name)?;
 
-        Ok(Wrap(res))
+        Ok(Wrap::new(res))
     }
 
     pub fn get_res<T>(&self, fn_name: &str) -> Res<Wrap<T>>
@@ -99,7 +99,7 @@ impl<'ast> Esyn<'ast> {
             unreachable!("{inner:#?}")
         };
 
-        Ok(Wrap(<T as DeRs<Expr>>::de(expr)?))
+        Ok(Wrap::new(<T as DeRs<Expr>>::de(expr)?))
     }
 
     fn inner_get_value<T>(&self, fn_name: &str, let_name: &str) -> Res<T>
@@ -143,7 +143,7 @@ impl<'ast> Esyn<'ast> {
 }
 
 impl<'ast> Esyn<'ast> {
-    fn get_fn(&'ast self, fn_name: &str) -> Res<&'ast FnBlock> {
+    fn _get_fn(&'ast self, fn_name: &str) -> Res<&'ast FnBlock> {
         let fn_name = quote::format_ident!("{fn_name}");
         let fb = self
             .map_fn
@@ -168,7 +168,7 @@ impl<'ast> FnBlock<'ast> {
         }
     }
 
-    fn visit(&mut self) -> Res<()> {
+    fn _visit(&mut self) -> Res<()> {
         for stmt in self.inner.block.stmts.iter() {
             self.visit_stmt(stmt);
         }
@@ -408,7 +408,7 @@ impl Default for EsynBuilder {
     }
 }
 
-fn join_field_path(i: &[&Ident]) -> String {
+fn _join_field_path(i: &[&Ident]) -> String {
     let mut res = Vec::with_capacity(i.len());
     for f in i.iter().rev() {
         res.push(f.to_string());

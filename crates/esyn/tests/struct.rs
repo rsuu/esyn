@@ -86,11 +86,12 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_let("a")
             .get_once::<Test>(config)
-            .unwrap(),
-        &Test {
+            .unwrap()
+            .get(),
+        Test {
             _struct_unit: StructUnit,
             _default: StructUnit
         }
@@ -125,11 +126,12 @@ fn main() {
 "#;
 
     assert_eq!(
-        &EsynBuilder::new()
+        EsynBuilder::new()
             .set_let("a")
             .get_once::<Test>(config)
-            .unwrap(),
-        &Test {
+            .unwrap()
+            .get(),
+        Test {
             _struct_empty: StructEmpty {},
             _struct_empty2: StructEmpty2(),
             _struct_unnamed: StructUnnamed(9, "abcd".to_string()),
