@@ -20,33 +20,34 @@ fn main() {
         _opt_i64: Option<i64>,
     }
 
-    let test = Test {
+    let expect = Test {
         _string: "hello".to_string(),
         _vec_u32: vec![1, 2, 4],
         _opt_i64: Some(-9223372036854775807),
     };
     let config = r#"
 fn main() {
-    let a = Test {
+    let test = Test {
         _string: "hello",
         _vec_u32: [1, 2, 4],
     };
 
-    a._opt_i64 = Some(-9223372036854775807);
+    test._opt_i64 = Some(-9223372036854775807);
 }
 "#;
 
-    let a = EsynBuilder::new()
+    let test = EsynBuilder::new()
         .set_fn("main")
-        .set_let("a")
+        .set_let("test")
         .get_once::<Test>(config)
         .unwrap();
-    assert_eq!(test, *a);
+
+    assert_eq!(test.get_ref(), &expect);
 
     // Serialization
     let code = quote! {
         fn main() {
-            let a = #a;
+            let test = #test;
         }
     }
     .into_pretty()
@@ -60,11 +61,18 @@ For more examples take a look on [tests](https://github.com/rsuu/esyn/tree/main/
 
 ## Features
 
+## Suffix Syntax
+
+```rust
+fn main() {
+    // ...
+
+    config.val = 123;
+}
+"#;
+```
+
 ### Custom Syntax
-
-see [custom_syntax](https://github.com/rsuu/esyn/tree/main/crates/esyn/examples/custom_syntax.rs)
-
-In short:
 
 ```rust
 // ...
@@ -79,13 +87,16 @@ impl CustomSyntax for Test {
     // ...
 }
 
-// config:
+// in config:
+//
 // fn main() {
 //     let test = m!(123);
 // }
 
 // ...
 ```
+
+see full example on [struct_custom_syntax](https://github.com/rsuu/esyn/tree/main/crates/esyn/tests/struct_custom_syntax.rs)
 
 ## Supported Types
 

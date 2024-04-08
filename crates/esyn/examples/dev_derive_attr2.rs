@@ -15,33 +15,6 @@ fn main() {
     dbg!(key);
 }
 
-fn test_enum_attr_custom_syntax() {
-    #[derive(Debug, EsynDe, EsynSer, Default)]
-    #[custom_syntax]
-    enum Enum {
-        Named {
-            a: u8,
-            b: u8,
-        },
-
-        #[default]
-        Unknown,
-    }
-
-    let config = r#"
-fn main() {
-    let val = m!(1:2);
-}
-"#;
-
-    let val = &EsynBuilder::new()
-        .set_fn("main")
-        .set_let("val")
-        .get_once::<Enum>(config)
-        .unwrap();
-    dbg!(val);
-}
-
 #[derive(Debug, EsynDe, EsynSer, Default)]
 #[custom_syntax]
 pub struct Key<Opt = Option<Ch>> {

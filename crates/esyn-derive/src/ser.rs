@@ -27,11 +27,13 @@ fn derive_struct(input: &DeriveInput, data: &DataStruct) -> Result<TokenStream> 
 
     let struct_body_unnamed: TokenStream = r#"
 quote! {
+
     #struct_ident(
         #(
             #iter,
         )*
     )
+
 }
 "#
     .parse()
@@ -39,11 +41,13 @@ quote! {
 
     let struct_body_named: TokenStream = r#"
 quote! {
+
     #struct_ident {
         #(
             #iter_name: #iter_field,
         )*
     }
+
 }
 "#
     .parse()
@@ -157,9 +161,10 @@ fn derive_enum(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream> {
 
     let enum_body_unnamed: TokenStream = r#"
 quote! {
+
     #var_ident(
         #(
-            #iter
+            #iter ,
         )*
     )
 
@@ -167,14 +172,15 @@ quote! {
 "#
     .parse()
     .unwrap();
-
     let enum_body_named: TokenStream = r#"
 quote! {
+
     #var_ident {
         #(
-            #iter_name: #iter,
+            #iter_name: #iter ,
         )*
     }
+
 }
 "#
     .parse()
@@ -196,10 +202,11 @@ quote! {
         match fields {
             // impl enum unit
             Fields::Unit => {
-                //                 #[rustfmt::skip]
                 enum_ser.extend(quote! {
                 // e.g. "Unit1" => Self::Unit1,
-                #enum_ident::#var_ident => { quote!{ #enum_ident::#var_ident } },
+                #enum_ident::#var_ident => {
+                    quote! { #enum_ident::#var_ident }
+                },
                 });
             }
 
@@ -214,8 +221,8 @@ quote! {
                     named_idx.push(format!("__{n}").parse().unwrap());
                 }
 
-                //                 #[rustfmt::skip]
                 enum_ser.extend(quote! {
+
                 #enum_ident::#var_ident(
                     #(#named_idx ,)*
                 ) => {
@@ -228,7 +235,7 @@ quote! {
                     )*
                     ];
 
-                    quote! { #enum_body_unnamed }
+                    #enum_body_unnamed
                 },
 
                 });
@@ -243,9 +250,13 @@ quote! {
                     field_name.push(&f.ident);
                 }
 
-                //                 #[rustfmt::skip]
                 enum_ser.extend(quote! {
-                #enum_ident::#var_ident { #(#field_name ,)* } => {
+
+                #enum_ident::#var_ident {
+                    #(#field_name ,)*
+                } => {
+                    dbg!("EsynSer EnumNamed");
+
                     let var_ident = quote!{ #enum_ident::#var_ident };
                     let iter_name = [
                         #(
@@ -258,15 +269,15 @@ quote! {
                         )*
                     ];
 
-                    quote!{ #enum_body_named }
+                    #enum_body_named
                 },
+
                 });
             }
         }
     }
 
     // impl enum
-    //     #[rustfmt::skip]
     enum_impl.extend(quote! {
         impl #impl_generics
             esyn::EsynSer

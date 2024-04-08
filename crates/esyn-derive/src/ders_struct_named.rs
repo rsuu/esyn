@@ -18,7 +18,7 @@ pub fn parse(input: &DeriveInput, fields: &FieldsNamed) -> Result<TokenStream> {
     }
 
     let (ts_impl_custom_syntax, ts_struct_attr_custom_syntax, ts_mutpath_struct_attr_custom_syntax) =
-        gen_attr_custom_syntax(struct_ident, struct_attrs, &impl_generics, &ty_generics)?;
+        ders::gen_attr_custom_syntax(struct_ident, struct_attrs, &impl_generics, &ty_generics)?;
 
     Ok(quote! {
 
@@ -39,8 +39,6 @@ pub fn parse(input: &DeriveInput, fields: &FieldsNamed) -> Result<TokenStream> {
             else { unreachable!() };
 
             Ok(Self {
-                // TODO:
-                // expand:
                 #(
                 #field_name: {
                     if let Ok(expr) = ExprHelper::get_named_field_expr(
@@ -90,76 +88,4 @@ pub fn parse(input: &DeriveInput, fields: &FieldsNamed) -> Result<TokenStream> {
     }
 
     })
-}
-
-fn gen_attr_custom_syntax(
-    struct_ident: &Ident,
-    struct_attrs: &[Attribute],
-    impl_generics: &ImplGenerics<'_>,
-    ty_generics: &TypeGenerics<'_>,
-) -> Result<(TokenStream, TokenStream, TokenStream)> {
-    let (ts_struct_attr_custom_syntax, ts_mutpath_struct_attr_custom_syntax) = 's: {
-        // if `Self` has `#[custom_syntax]`
-        //   generate code
-        // else
-        //   skip
-
-        if attr::attr_custom_syntax(struct_attrs)?.is_none() {
-            break 's (quote! {}, quote! {});
-        }
-
-        let return_val = quote! {
-
-            let ast = {
-                if let Ok(expr) = <Self as ::esyn::CustomSyntax>::parse(ast) {
-                    return Ok(<Self as DeRs<Expr>>::de(&expr)?);
-                } else {
-                    ast
-                }
-            };
-
-        };
-        let set_val = quote! {
-
-            let ast = {
-                if let Ok(expr) = <Self as ::esyn::CustomSyntax>::parse(ast) {
-                    *self = <Self as DeRs<Expr>>::de(&expr)?;
-
-                    return Ok(());
-                } else {
-                    ast
-                }
-            };
-
-        };
-
-        (return_val, set_val)
-    };
-    let ts_impl_custom_syntax = {
-        // if not-impl `CustomSyntax` for `Self`
-        //   auto impl
-        // else
-        //   skip
-
-        if ts_struct_attr_custom_syntax.is_empty()
-            && ts_mutpath_struct_attr_custom_syntax.is_empty()
-        {
-            quote! {
-
-                impl #impl_generics
-                    ::esyn::CustomSyntax
-                for #struct_ident #ty_generics
-                {}
-
-            }
-        } else {
-            quote! {}
-        }
-    };
-
-    Ok((
-        ts_impl_custom_syntax,
-        ts_struct_attr_custom_syntax,
-        ts_mutpath_struct_attr_custom_syntax,
-    ))
 }

@@ -9,34 +9,34 @@ fn main() {
         _opt_i64: Option<i64>,
     }
 
-    let test = Test {
+    let expect = Test {
         _string: "hello".to_string(),
         _vec_u32: vec![1, 2, 4],
         _opt_i64: Some(-9223372036854775807),
     };
     let config = r#"
 fn main() {
-    let a = Test {
+    let test = Test {
         _string: "hello",
         _vec_u32: [1, 2, 4],
     };
 
-    a._opt_i64 = Some(-9223372036854775807);
+    test._opt_i64 = Some(-9223372036854775807);
 }
 "#;
 
-    let a = EsynBuilder::new()
+    let test = EsynBuilder::new()
         .set_fn("main")
-        .set_let("a")
+        .set_let("test")
         .get_once::<Test>(config)
         .unwrap();
 
-    assert_eq!(a.get_ref(), &test);
+    assert_eq!(test.get_ref(), &expect);
 
     // Serialization
     let code = quote! {
         fn main() {
-            let a = #a;
+            let test = #test;
         }
     }
     .into_pretty()
