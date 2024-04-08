@@ -69,7 +69,6 @@ fn main() {
 
     config.val = 123;
 }
-"#;
 ```
 
 ### Custom Syntax
