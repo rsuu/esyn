@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.8.2"
+version = "0.9.0"
 edition = "2021"
 authors = ["RSUU <rsuuyu@gmail.com>"]
 description = "De/Serialization Rust In Rust."
@@ -16,7 +16,7 @@ categories = ["encoding"]
 exclude = ["examples/", ".gitignore", ".github/", "tests/"]
 
 [workspace.dependencies]
-esyn-derive = { version = "0.8.2", path = "./crates/esyn-derive" }
+esyn-derive = { version = "0.9.0", path = "./crates/esyn-derive" }
 syn = { version = "2.0.48", features = ["extra-traits", "visit"] }
 quote = "1.0.35"
 proc-macro2 = "1.0"
