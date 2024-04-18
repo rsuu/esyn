@@ -1,3 +1,5 @@
+// TODO: allow docs comment
+
 use crate::{visit::*, *};
 
 use std::cell::OnceCell;
@@ -92,6 +94,7 @@ impl<'ast> Esyn<'ast> {
             .ok_or(err! {NotFound: "{fn_name}"})?;
 
         if ret != &RetType::Any {
+            // TODO: get user's ret in string
             return err!(Expected "Any", "TODO");
         }
 
@@ -368,7 +371,7 @@ impl RetType {
 
         match ty.as_ref() {
             // e.g.
-            //   fn f() -> Any{ ... }
+            //   fn f() -> Any { ... }
             Type::Path(TypePath { path, .. })
                 if (path.segments.len() == 1 && path.segments[0].ident == "Any") =>
             {

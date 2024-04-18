@@ -18,6 +18,7 @@ fn d1() {
 }
 
 fn t1() {
+    /// a
     #[derive(PartialEq, Debug, EsynDe, EsynSer, Default)]
     struct Tu8 {
         _u8: u8,

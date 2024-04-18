@@ -16,7 +16,7 @@ pub fn derive_de(input: &DeriveInput) -> Result<TokenStream> {
 
     Ok(quote! {
         const _: () = {
-            use {::esyn::*, ::esyn::syn::*};
+            use { ::esyn::*, ::esyn::syn::* };
 
             #ts
         };
@@ -139,7 +139,7 @@ pub fn gen_attr_custom_syntax(
         // else
         //   skip
 
-        if attr::attr_custom_syntax(attrs)?.is_none() {
+        if attr::attr_custom_syntax(attrs).is_none() {
             break 's (quote! {}, quote! {});
         }
 
