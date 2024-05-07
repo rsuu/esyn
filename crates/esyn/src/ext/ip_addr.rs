@@ -1,7 +1,6 @@
-use crate::*;
+use crate::{syn::*, *};
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use syn::*;
 
 // Enum::Unnamed(...)
 impl DeRs<Expr> for IpAddr {

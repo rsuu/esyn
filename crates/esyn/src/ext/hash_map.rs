@@ -1,7 +1,6 @@
-use crate::*;
+use crate::{syn::*, *};
 
 use std::{collections::HashMap, hash::Hash};
-use syn::*;
 
 impl<K, V> DeRs<Expr> for HashMap<K, V>
 where

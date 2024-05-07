@@ -1,7 +1,6 @@
-use crate::*;
+use crate::{syn::*, *};
 
 use std::collections::BTreeMap;
-use syn::*;
 
 impl<K, V> DeRs<Expr> for BTreeMap<K, V>
 where

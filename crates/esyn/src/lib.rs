@@ -11,12 +11,16 @@ mod parser;
 mod visit;
 
 pub mod utils;
-pub mod __quote {
-    pub use quote::*;
-}
 
 pub use {
-    auto::*,
+    auto::{
+        custom_syntax::{CustomSyntax, WrapExpr},
+        default::EsynDefault,
+        ders::DeRs,
+        mut_path::MutPath,
+        ser::EsynSer,
+        wrap::Wrap,
+    },
     error::{MyErr, Res},
     ext::ByteStr,
     parser::{Esyn, EsynBuilder, FnBlock},
@@ -30,6 +34,6 @@ pub use {
 // extern-crate
 pub use {
     proc_macro2::{self, TokenStream},
-    quote::{quote, ToTokens},
+    quote::{self as esyn_quote, quote, ToTokens},
     syn::{self, parse::Parse, punctuated::Punctuated, visit::Visit, Expr},
 };

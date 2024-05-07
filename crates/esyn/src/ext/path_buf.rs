@@ -1,7 +1,6 @@
-use crate::*;
+use crate::{syn::*, *};
 
 use std::path::PathBuf;
-use syn::*;
 
 impl DeRs<Expr> for PathBuf {
     fn de(ast: &Expr) -> Res<Self> {
@@ -12,6 +11,7 @@ impl DeRs<Expr> for PathBuf {
 impl MutPath for PathBuf {
     fn mut_path(&mut self, _iter: &mut std::slice::Iter<&Ident>, ast: &syn::Expr) -> Res<()> {
         *self = <Self as DeRs<Expr>>::de(ast)?;
+
         Ok(())
     }
 }

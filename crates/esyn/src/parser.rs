@@ -1,5 +1,3 @@
-// TODO: allow docs comment
-
 use crate::{visit::*, *};
 
 use std::cell::OnceCell;
@@ -44,8 +42,12 @@ pub struct FnBlock<'ast> {
 pub enum RetType {
     #[default]
     Unit,
+    Named,
+    Unnamed,
 
     Any,
+
+    Unknown(Box<Type>),
 }
 
 impl<'ast> Esyn<'ast> {
@@ -73,13 +75,15 @@ impl<'ast> Esyn<'ast> {
             .unwrap()
             .inner
             .get(&fn_name)
-            .ok_or(err!(NotFound: "{fn_name}"))?;
+            .ok_or(err! { NotFound: "{fn_name}" })?;
 
         fb.exec(&mut res, let_name)?;
 
         Ok(Wrap::new(res))
     }
 
+    // e.g.
+    //   f() -> Any { ... }
     pub fn get_res<T>(&self, fn_name: &str) -> Res<Wrap<T>>
     where
         T: DeRs<Expr>,
@@ -91,11 +95,10 @@ impl<'ast> Esyn<'ast> {
             .ok_or(MyErr::Todo)?
             .inner
             .get(&fn_name)
-            .ok_or(err! {NotFound: "{fn_name}"})?;
+            .ok_or(err! { NotFound: "{fn_name}" })?;
 
         if ret != &RetType::Any {
-            // TODO: get user's ret in string
-            return err!(Expected "Any", "TODO");
+            return err!(Expected "Any", ret.to_string());
         }
 
         let Stmt::Expr(expr, None) = &inner.block.stmts[0] else {
@@ -372,13 +375,20 @@ impl RetType {
         match ty.as_ref() {
             // e.g.
             //   fn f() -> Any { ... }
-            Type::Path(TypePath { path, .. })
-                if (path.segments.len() == 1 && path.segments[0].ident == "Any") =>
-            {
-                Self::Any
+            Type::Path(TypePath { path, .. }) => {
+                let len = path.segments.len();
+                let head = &path.segments[0].ident;
+
+                // TODO: Unit
+                // TODO: Unnamed
+                // TODO: Named
+                match (len, head.to_string().as_str()) {
+                    (1, "Any") => Self::Any,
+                    _ => unimplemented!(),
+                }
             }
 
-            _ => Default::default(),
+            _ => Self::Unknown(ty.to_owned()),
         }
     }
 }
@@ -447,6 +457,16 @@ pub fn get_field_path(i: &Expr) -> Res<(&Ident, Vec<&Ident>)> {
             Expr::Path(v) => return Ok((v.path.get_ident().unwrap(), tmp)),
 
             _ => unreachable!("{expr:#?}"),
+        }
+    }
+}
+
+impl ToString for RetType {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Any => "Any".to_string(),
+            Self::Unknown(ty) => ty.into_token_stream().to_string(),
+            _ => todo!(),
         }
     }
 }

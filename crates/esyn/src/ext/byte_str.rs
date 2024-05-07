@@ -1,5 +1,4 @@
-use crate::*;
-use syn::*;
+use crate::{syn::*, *};
 
 // b"abc"
 #[derive(Debug, PartialEq, Clone)]
