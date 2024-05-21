@@ -20,6 +20,7 @@ pub use {
         mut_path::MutPath,
         ser::EsynSer,
         wrap::Wrap,
+        TokenStreamExt,
     },
     error::{MyErr, Res},
     ext::ByteStr,
