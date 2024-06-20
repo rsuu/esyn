@@ -108,11 +108,11 @@ fn main() {
     let esyn = Esyn::new(config);
     esyn.init().unwrap();
 
-    let uint = &EsynBuilder::new()
+    let uint = &Esyn::builder()
         .set_let("uint")
         .get::<Uint>(&esyn)
         .unwrap();
-    let int = &EsynBuilder::new().set_let("int").get::<Int>(&esyn).unwrap();
+    let int = &Esyn::builder().set_let("int").get::<Int>(&esyn).unwrap();
 
     let _float = &esyn.get_value::<Float>("main", "float").unwrap();
     let _neg_float = &esyn.get_value::<NegFloat>("main", "neg_float").unwrap();
@@ -422,7 +422,7 @@ fn main() {
 }
 "#;
 
-    let a = EsynBuilder::new()
+    let a = Esyn::builder()
         .set_let("a")
         .get_once::<()>(config)
         .unwrap();
@@ -448,7 +448,7 @@ fn main() {
 }
 "#;
 
-    let a = &EsynBuilder::new()
+    let a = &Esyn::builder()
         .set_let("a")
         .get_once::<Test>(config)
         .unwrap()

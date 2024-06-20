@@ -25,7 +25,7 @@ fn main() {
 }
 "#;
 
-    let test = EsynBuilder::new()
+    let test = Esyn::builder()
         .set_fn("main")
         .set_let("test")
         .get_once::<Test>(config)

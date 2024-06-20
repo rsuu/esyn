@@ -20,7 +20,7 @@ fn main() {
 "#;
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_let("a")
             .get_once::<Test>(config)
             .unwrap()

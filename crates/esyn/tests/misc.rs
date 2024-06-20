@@ -5,6 +5,7 @@ fn docs_on_struct() {
     /// a
     /// b
     /// c
+    // A
     #[derive(Debug, PartialEq, EsynDe, EsynSer)]
     struct A {
         a: u8,

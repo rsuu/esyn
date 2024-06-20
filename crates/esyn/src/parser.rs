@@ -62,6 +62,9 @@ impl<'ast> Esyn<'ast> {
         self.update_map_fn()
     }
 
+    // e.g.
+    //   let a = 1;
+    //       ^
     pub fn get_value<T>(&self, fn_name: &str, let_name: &str) -> Res<Wrap<T>>
     where
         T: DeRs<Expr> + MutPath,
@@ -83,7 +86,7 @@ impl<'ast> Esyn<'ast> {
     }
 
     // e.g.
-    //   f() -> Any { ... }
+    //   fn main() -> Any { ... }
     pub fn get_res<T>(&self, fn_name: &str) -> Res<Wrap<T>>
     where
         T: DeRs<Expr>,
@@ -297,6 +300,12 @@ impl<'ast> FnBlock<'ast> {
     }
 }
 
+impl<'ast> Esyn<'ast> {
+    pub fn builder() -> EsynBuilder {
+        EsynBuilder::new()
+    }
+}
+
 impl EsynBuilder {
     pub fn new() -> Self {
         Self {
@@ -341,9 +350,6 @@ impl EsynBuilder {
         T: DeRs<Expr> + MutPath,
     {
         match &self {
-            // e.g.
-            //   let a = 1;
-            //       ^
             Self {
                 ref fn_name,
                 let_name: Some(let_name),
@@ -351,9 +357,6 @@ impl EsynBuilder {
                 ..
             } => esyn.get_value(fn_name, let_name),
 
-            // e.g.
-            //   fn main() -> Any {}
-            //                ^^^
             Self {
                 ref fn_name,
                 let_name: None,

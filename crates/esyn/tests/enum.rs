@@ -115,7 +115,7 @@ fn main() {
 }
 "#;
 
-    let res = EsynBuilder::new()
+    let res = Esyn::builder()
         .set_let("a")
         .get_once::<Test>(config)
         .unwrap();

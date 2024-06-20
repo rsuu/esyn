@@ -71,7 +71,7 @@ fn main() {
 "#;
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_fn("main")
             .set_let("a")
             .get_once::<Test2>(config)
@@ -114,12 +114,11 @@ fn main() {
     a._s1 = S1 {
         _u8: 4,
     };
-
 }
 "#;
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_fn("main")
             .set_let("a")
             .get_once::<Test2>(config)
@@ -171,7 +170,7 @@ fn return_any_enum_named() -> Any {
     esyn.init().unwrap();
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_fn("return_any_struct_named")
             .flag_res()
             .get::<Test>(&esyn)
@@ -181,7 +180,7 @@ fn return_any_enum_named() -> Any {
     );
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_fn("return_any_enum_named")
             .flag_res()
             .get::<Enum>(&esyn)
@@ -194,7 +193,7 @@ fn return_any_enum_named() -> Any {
     );
 
     assert_eq!(
-        EsynBuilder::new()
+        Esyn::builder()
             .set_fn("return_any_enum_named")
             .flag_res()
             .get_once::<Enum>(config)
@@ -206,3 +205,48 @@ fn return_any_enum_named() -> Any {
         }
     );
 }
+
+#[test]
+fn test_let() {
+    let config = r#"
+fn main() {}
+
+fn let_struct() {
+    let a = Test {
+        _u8: 8,
+        _u16: 16,
+    };
+}
+"#;
+
+    let esyn = Esyn::new(config);
+    esyn.init().unwrap();
+
+    assert_eq!(
+        Esyn::builder()
+            .set_fn("let_struct")
+            .set_let("a")
+            .get::<Test>(&esyn)
+            .unwrap()
+            .get_ref(),
+        &Test { _u16: 16, _u8: 8 }
+    );
+}
+
+// #[test]
+// fn test_collect() {
+//     let config = r#"
+// fn main() {}
+//
+// fn collect_struct() -> Any {
+//     let a = 8;
+//     let b = 16;
+//
+//     Any { ... }
+// }
+// "#;
+//
+//     let esyn = Esyn::new(config);
+//     esyn.init().unwrap();
+//
+// }

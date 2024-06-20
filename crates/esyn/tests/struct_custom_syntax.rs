@@ -49,7 +49,7 @@ fn main() {
     let esyn = Esyn::new(config);
     esyn.init().unwrap();
 
-    let test = &EsynBuilder::new()
+    let test = &Esyn::builder()
         .set_fn("main")
         .set_let("test")
         .get::<Named>(&esyn)
@@ -76,7 +76,7 @@ fn main() {
     let esyn = Esyn::new(config);
     esyn.init().unwrap();
 
-    let test = &EsynBuilder::new()
+    let test = &Esyn::builder()
         .set_fn("main")
         .set_let("test")
         .get::<Unnamed>(&esyn)
@@ -96,7 +96,7 @@ fn main() {
     let esyn = Esyn::new(config);
     esyn.init().unwrap();
 
-    let test = &EsynBuilder::new()
+    let test = &Esyn::builder()
         .set_fn("main")
         .set_let("test")
         .get::<Unit>(&esyn)
